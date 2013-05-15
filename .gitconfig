@@ -1,0 +1,14 @@
+[user]
+	name = William Cotton
+	email = williamcotton@gmail.com
+
+[color]
+    ui = true
+[alias]
+	lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --
+[github]
+	user = williamcotton
+[ghi]
+	token = 14f330b74e58b9b2571a4cca0773751c7faea13c
+[push]
+	default = current
