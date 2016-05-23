@@ -1,5 +1,5 @@
-export PATH="/usr/local/bin:/usr/local/sbin:/usr/local/share/npm/bin:$PATH"
-export EDITOR='mate -w'
+export PATH="/usr/local/bin:/usr/local/sbin:/usr/local/share/npm/bin:~/bin:$PATH"
+export EDITOR='~/bin/subl'
 
 export LS_OPTIONS='--color=auto'
 export CLICOLOR='Yes'
