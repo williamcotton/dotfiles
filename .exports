@@ -1,5 +1,5 @@
-export PATH="/usr/local/bin:/usr/local/sbin:/usr/local/share/npm/bin:~/bin:/Applications/Postgres.app/Contents/Versions/9.3/bin:/usr/local/heroku/bin:$PATH"
-export EDITOR='subl -n -w'
+export PATH="/usr/local/bin:/usr/local/sbin:/usr/local/share/npm/bin:~/bin:$PATH"
+export EDITOR='~/bin/subl -n -w'
 
 export LS_OPTIONS='--color=auto'
 export CLICOLOR='Yes'
