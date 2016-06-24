@@ -5,6 +5,11 @@ for file in ~/dotfile/.{extra,bash_prompt,exports,aliases,functions,git-completi
 done
 unset file
 
+for file in ~/dotfile/.{gitconfig,vimrc,gemrc}; do
+  cp "$file" ~/
+done
+unset file
+
 # Case-insensitive globbing (used in pathname expansion)
 shopt -s nocaseglob
 
@@ -43,3 +48,6 @@ complete -o "nospace" -W "Finder Dock Mail Safari iTunes iCal Address\ Book Syst
 # kern.sysv.shmmax: 4194304 -> 1073741824
 # copelco@montgomery:~$ sudo sysctl -w kern.sysv.shmall=1073741824
 # kern.sysv.shmall: 1024 -> 1073741824
+
+# We want Ctrl+s to work for BASH search
+stty -ixon
