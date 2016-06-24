@@ -24,4 +24,4 @@ export DEISCTL_TUNNEL=deis
 ssh-add ~/.ssh/deis &> /dev/null
 
 export NVM_DIR=~/.nvm
-source $(brew --prefix nvm)/nvm.sh
+command -v brew >/dev/null 2>&1 && source $(brew --prefix nvm)/nvm.sh
