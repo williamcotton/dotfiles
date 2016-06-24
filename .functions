@@ -69,3 +69,12 @@ function codepoint() {
 	perl -e "use utf8; print sprintf('U+%04X', ord(\"$@\"))"
 	echo # newline
 }
+
+# Open a tx on blocktrail
+function txi() {
+	open "https://www.blocktrail.com/tBTC/tx/$@"
+}
+
+function adi() {
+	open "https://www.blocktrail.com/tBTC/address/$@"
+}
