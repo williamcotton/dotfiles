@@ -13,15 +13,9 @@ export LESS_TERMCAP_md="$ORANGE"
 # Larger bash history (allow 32³ entries; default is 500)
 export HISTSIZE=32768
 export HISTFILESIZE=$HISTSIZE
-export HISTCONTROL=ignoredups
+export HISTCONTROL=ignoredups:erasedups
 # Make some commands not show up in history
 export HISTIGNORE="ls:ls *:cd:cd -:pwd;exit:date:* --help"
-
-export PHANTOMJS_BIN="/usr/local/bin/phantomjs"
-
-export FLEETCTL_TUNNEL=deis
-export DEISCTL_TUNNEL=deis
-ssh-add ~/.ssh/deis &> /dev/null
 
 export NVM_DIR=~/.nvm
 command -v brew >/dev/null 2>&1 && source $(brew --prefix nvm)/nvm.sh

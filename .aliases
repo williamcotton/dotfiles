@@ -14,6 +14,10 @@ alias s="subl ."
 alias o="open"
 alias oo="open ."
 alias dc="docker-compose"
+alias gro="git fetch origin && git rebase origin/develop"
+alias gbcl='git branch --merged | egrep -v "(^\*|master|develop)" | xargs git branch -d'
+alias dcldb='bundle exec rake db:drop RAILS_ENV=test; bundle exec rake db:create RAILS_ENV=test; bundle exec rake db:schema:load RAILS_ENV=test'
+alias pj="python -m json.tool"
 
 # List all files colorized in long format
 alias l="ls -Gl"
