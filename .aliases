@@ -19,6 +19,8 @@ alias gbcl='git branch --merged | egrep -v "(^\*|master|develop)" | xargs git br
 alias dcldb='bundle exec rake db:drop db:create db:schema:load db:structure:load RAILS_ENV=test'
 alias pj="python -m json.tool"
 alias ber="bundle exec rspec"
+alias yt="yarn test -u --coverage=false"
+alias jit="node inspect node_modules/.bin/jest"
 
 # List all files colorized in long format
 alias l="ls -Gl"
