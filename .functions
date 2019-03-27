@@ -78,3 +78,8 @@ function txi() {
 function adi() {
 	open "https://www.blocktrail.com/tBTC/address/$@"
 }
+
+# check out branch WMW-4324
+cob() {
+ git branch -a | grep "$1" | sed -n 1p | xargs git checkout;
+}
