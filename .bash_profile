@@ -44,7 +44,7 @@ export NVM_DIR="$HOME/.nvm"
   . "$(brew --prefix nvm)/nvm.sh"
 
 # Load rbenv
-eval "$(rbenv init -)"
+eval "$(rbenv init - --no-rehash)"
 
 # Load AVN
 # [[ -s "$HOME/.avn/bin/avn.sh" ]] && source "$HOME/.avn/bin/avn.sh" # load avn
