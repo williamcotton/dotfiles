@@ -5,7 +5,7 @@ for file in ~/dotfile/.{extra,bash_prompt,exports,aliases,functions,git-completi
 done
 unset file
 
-for file in ~/dotfile/.{gitconfig,vimrc,gemrc}; do
+for file in ~/dotfile/.{gitconfig,gemrc}; do
   cp "$file" ~/
 done
 unset file
@@ -36,11 +36,21 @@ complete -W "NSGlobalDomain" defaults
 # Add `killall` tab completion for common apps
 complete -o "nospace" -W "Finder Dock Mail Safari iTunes iCal Address\ Book SystemUIServer" killall
 
-# Load RVM function
-[[ -s "$HOME/.rvm/scripts/rvm" ]] && . "$HOME/.rvm/scripts/rvm" 
-
 # Load SCM Breeze
 [ -s "$HOME/.scm_breeze/scm_breeze.sh" ] && source "$HOME/.scm_breeze/scm_breeze.sh"
+
+# Load NVM
+export NVM_DIR="$HOME/.nvm"
+  . "$(brew --prefix nvm)/nvm.sh"
+
+# Load rbenv
+eval "$(rbenv init -)"
+
+# Load AVN
+# [[ -s "$HOME/.avn/bin/avn.sh" ]] && source "$HOME/.avn/bin/avn.sh" # load avn
+
+# Load RVM function
+# [[ -s "$HOME/.rvm/scripts/rvm" ]] && . "$HOME/.rvm/scripts/rvm" 
 
 # copelco@montgomery:~$ sudo sysctl -w kern.sysv.shmmax=1073741824
 # kern.sysv.shmmax: 4194304 -> 1073741824
