@@ -1,5 +1,5 @@
 export PATH="/usr/local/bin:/usr/local/sbin:/usr/local/share/npm/bin:~/bin:$PATH"
-export EDITOR='~/bin/subl -a -w'
+export EDITOR='/usr/local/bin/code -a -w'
 
 export LS_OPTIONS='--color=auto'
 export CLICOLOR='Yes'
