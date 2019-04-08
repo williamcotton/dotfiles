@@ -18,5 +18,5 @@ export HISTCONTROL=ignoredups:erasedups
 export HISTIGNORE="ls:ls *:cd:cd -:pwd;exit:date:* --help"
 
 export NPM_TOKEN=$(cat ~/.npmrc | sed -E -n 's/.*_authToken=(.*)/\1/p')
-export NVM_DIR=~/.nvm
-command -v brew >/dev/null 2>&1 && source $(brew --prefix nvm)/nvm.sh
+# export NVM_DIR=~/.nvm
+# command -v brew >/dev/null 2>&1 && source $(brew --prefix nvm)/nvm.sh
