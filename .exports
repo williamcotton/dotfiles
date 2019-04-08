@@ -7,6 +7,7 @@ export LSCOLORS='Bxgxfxfxcxdxdxhbadbxbx'
 
 # Don’t clear the screen after quitting a manual page
 export MANPAGER="less -X"
+
 # Highlight section titles in manual pages
 export LESS_TERMCAP_md="$ORANGE"
 
@@ -14,9 +15,9 @@ export LESS_TERMCAP_md="$ORANGE"
 export HISTSIZE=32768
 export HISTFILESIZE=$HISTSIZE
 export HISTCONTROL=ignoredups:erasedups
+
 # Make some commands not show up in history
 export HISTIGNORE="ls:ls *:cd:cd -:pwd;exit:date:* --help"
 
+# npm token
 export NPM_TOKEN=$(cat ~/.npmrc | sed -E -n 's/.*_authToken=(.*)/\1/p')
-# export NVM_DIR=~/.nvm
-# command -v brew >/dev/null 2>&1 && source $(brew --prefix nvm)/nvm.sh

@@ -39,26 +39,8 @@ complete -o "nospace" -W "Finder Dock Mail Safari iTunes iCal Address\ Book Syst
 # Load SCM Breeze
 [ -s "$HOME/.scm_breeze/scm_breeze.sh" ] && source "$HOME/.scm_breeze/scm_breeze.sh"
 
-# Load NVM
-# export NVM_DIR="$HOME/.nvm"
-#   . "$(brew --prefix nvm)/nvm.sh"
-
-# Load rbenv
-# eval "$(rbenv init - --no-rehash)"
-
-# Load AVN
-# [[ -s "$HOME/.avn/bin/avn.sh" ]] && source "$HOME/.avn/bin/avn.sh" # load avn
-
-# Load RVM function
-# [[ -s "$HOME/.rvm/scripts/rvm" ]] && . "$HOME/.rvm/scripts/rvm"
-
 # Load asdf
 . $(brew --prefix asdf)/asdf.sh
-
-# copelco@montgomery:~$ sudo sysctl -w kern.sysv.shmmax=1073741824
-# kern.sysv.shmmax: 4194304 -> 1073741824
-# copelco@montgomery:~$ sudo sysctl -w kern.sysv.shmall=1073741824
-# kern.sysv.shmall: 1024 -> 1073741824
 
 # We want Ctrl+s to work for BASH search
 stty -ixon
