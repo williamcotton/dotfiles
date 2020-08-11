@@ -21,6 +21,7 @@ alias pj="python -m json.tool"
 alias ber="bundle exec rspec"
 alias yt="yarn test -u --coverage=false"
 alias jit="node inspect node_modules/.bin/jest"
+alias lss="find . -not -path '*/\.*'"
 
 # List all files colorized in long format
 alias l="ls -Gl"
