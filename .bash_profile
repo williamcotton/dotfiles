@@ -37,10 +37,13 @@ complete -W "NSGlobalDomain" defaults
 complete -o "nospace" -W "Finder Dock Mail Safari iTunes iCal Address\ Book SystemUIServer" killall
 
 # Load SCM Breeze
+! [ -s "$HOME/.scm_breeze/scm_breeze.sh" ] && git clone git://github.com/scmbreeze/scm_breeze.git "$HOME/.scm_breeze"
 [ -s "$HOME/.scm_breeze/scm_breeze.sh" ] && source "$HOME/.scm_breeze/scm_breeze.sh"
 
 # Load asdf
-. $(brew --prefix asdf)/asdf.sh
+if which brew; then 
+  . $(brew --prefix asdf)/asdf.sh; 
+fi;
 
 # We want Ctrl+s to work for BASH search
 stty -ixon
