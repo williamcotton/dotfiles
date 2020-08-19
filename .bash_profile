@@ -41,7 +41,7 @@ complete -o "nospace" -W "Finder Dock Mail Safari iTunes iCal Address\ Book Syst
 [ -s "$HOME/.scm_breeze/scm_breeze.sh" ] && source "$HOME/.scm_breeze/scm_breeze.sh"
 
 # Load asdf
-if which brew; then 
+if (which brew > /dev/null); then
   . $(brew --prefix asdf)/asdf.sh; 
 fi;
 
