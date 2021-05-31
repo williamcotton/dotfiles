@@ -106,7 +106,9 @@ compinit
 
 [ -s "$HOME/.scm_breeze/scm_breeze.sh" ] && source "$HOME/.scm_breeze/scm_breeze.sh"
 
-. $HOME/dotfiles/.aliases
-. $HOME/dotfiles/.exports
+DIRECTORY=`dirname $0`
+
+. "$DIRECTORY/.aliases"
+. "$DIRECTORY/.exports"
 
 . $HOME/.asdf/asdf.sh
