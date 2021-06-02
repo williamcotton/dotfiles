@@ -106,9 +106,11 @@ compinit
 
 [ -s "$HOME/.scm_breeze/scm_breeze.sh" ] && source "$HOME/.scm_breeze/scm_breeze.sh"
 
-DIRECTORY=`dirname $0`
+ZSHRC_FILE=${(%):-%N}
+
+DIRECTORY=`dirname $ZSHRC_FILE`
 
 . "$DIRECTORY/.aliases"
 . "$DIRECTORY/.exports"
 
-. $HOME/.asdf/asdf.sh
+[ -s "$HOME/.asdf/asdf.sh" ] && . $HOME/.asdf/asdf.sh

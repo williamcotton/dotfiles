@@ -1,12 +1,15 @@
 # Load ~/.extra, ~/.bash_prompt, ~/.exports, ~/.aliases, ~/.functions and ~/.git-completion
 # ~/.extra can be used for settings you don’t want to commit
-for file in ~/dotfiles/.{extra,bash_prompt,exports,aliases,functions,git-completion}; do
+
+DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+
+for file in $DIRECTORY/.{extra,bash_prompt,exports,aliases,functions,git-completion}; do
 	[ -r "$file" ] && source "$file"
 done
 unset file
 
-for file in ~/dotfiles/.{gitconfig,gemrc}; do
-  cp "$file" ~/
+for file in $DIRECTORY/.{gitconfig,gemrc}; do
+  ! [ -s "$file" ] && cp "$file" ~/
 done
 unset file
 
@@ -47,3 +50,5 @@ fi;
 
 # We want Ctrl+s to work for BASH search
 stty -ixon
+
+zsh

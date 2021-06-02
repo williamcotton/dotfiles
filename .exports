@@ -21,4 +21,4 @@ export HISTIGNORE="ls:ls *:cd:cd -:pwd;exit:date:* --help"
 export HISTORY_IGNORE="(ls|cd|pwd|exit|cd ..)"
 
 # npm token
-export NPM_TOKEN=$(cat ~/.npmrc | sed -E -n 's/.*_authToken=(.*)/\1/p')
+[ -s "$HOME/.npmrc" ] && export NPM_TOKEN=$(cat ~/.npmrc | sed -E -n 's/.*_authToken=(.*)/\1/p')
