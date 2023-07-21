@@ -94,3 +94,24 @@ update_terminal_cwd() {
     local PWD_URL="file://$HOSTNAME${PWD//$SEARCH/$REPLACE}"
     printf '\e]7;%s\a' "$PWD_URL"
 }
+
+function killa() {
+  # Check if an argument was provided
+  if [ -z "$1" ]; then
+    echo "Usage: killa <process name>"
+    return 1
+  fi
+
+  # Get the PID of the process
+  pid=$(ps aux | grep "$1" | grep -v grep | awk '{print $2}')
+
+  # Check if a PID was found
+  if [ -z "$pid" ]; then
+    echo "No process found with name: $1"
+    return 1
+  fi
+
+  # Kill the process
+  kill -9 "$pid"
+  echo "Killed process with PID: $pid"
+}

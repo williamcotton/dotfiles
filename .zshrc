@@ -112,5 +112,6 @@ DIRECTORY=`dirname $ZSHRC_FILE`
 
 . "$DIRECTORY/.aliases"
 . "$DIRECTORY/.exports"
+. "$DIRECTORY/.functions"
 
 [ -s "$HOME/.asdf/asdf.sh" ] && . $HOME/.asdf/asdf.sh
