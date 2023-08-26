@@ -115,3 +115,207 @@ function killa() {
   kill -9 "$pid"
   echo "Killed process with PID: $pid"
 }
+
+get_project_name() {
+  local dir=$(pwd)
+  while [ "$dir" != "/" ]; do
+    if [[ "$dir" =~ ^(.*/)?Projects/([^/]+)/?$ ]]; then
+      echo "${match[2]}"
+      return
+    fi
+    dir=$(dirname "$dir")
+  done
+}
+
+get_project_database_name() {
+  local project_name=$(get_project_name)
+  echo "$project_name" | sed 's/-/_/g'
+}
+
+mysql_project_database() {
+  local project_database_name=$(get_project_database_name)
+  mysql -u root "$project_database_name" "$@"
+}
+
+alias mpd='mysql_project_database'
+
+get_last_command() {
+  local last_command=$(awk '{printf "%s", $0} /;$/ {print ""}' "$1" | tail -n 1 | sed 's/;$//')
+  echo "$last_command"
+}
+
+sc() {
+  local scratch_file="$HOME/Projects/$(get_project_name)/scratch.sql"
+  local last_command=$(get_last_command "$scratch_file")
+  echo "$last_command" >&2
+  mysql_project_database -e "$last_command" | ascii-table
+}
+
+sl() {
+  local last_command=$(get_last_command "$1")
+  mysql_project_database -e "$last_command"
+}
+
+slx() {
+  local scratch_file="/dev/stdin"
+  local output_file="/dev/stdout"
+  local execute_all=false
+
+  while getopts "i:o:a" opt; do
+    case $opt in
+      i)
+        scratch_file="$OPTARG"
+        ;;
+      o)
+        output_file="$OPTARG"
+        ;;
+      a)
+        execute_all=true
+        ;;
+      \?)
+        echo "Invalid option: -$OPTARG" >&2
+        return 1
+        ;;
+    esac
+  done
+
+  shift $((OPTIND-1))
+
+  if [ $# -gt 0 ]; then
+    echo "Invalid argument: $1" >&2
+    return 1
+  fi
+
+  if $execute_all; then
+    mysql_project_database < "$scratch_file" | tsvtoxlsx > "$output_file"
+  else
+    local last_command=$(get_last_command "$scratch_file")
+    mysql_project_database -e "$last_command" | tsvtoxlsx > "$output_file"
+  fi
+}
+
+prj() {
+  local dir=$(pwd)
+  while [ "$dir" != "/" ]; do
+    if [[ "$dir" =~ ^(.*/)?Projects/([^/]+)/?$ ]]; then
+      local project_name=${match[2]}
+      echo "[$project_name]\n" >&2
+      cd "$dir"
+			echo "$project_name" >> "$HOME/.prj_history"
+      export PRJ_HISTORY="$project_name"
+      echo "$(mdless --no-pager todo.md)" >&2
+      return
+    fi
+    dir=$(dirname "$dir")
+  done
+  local last_project=${PRJ_HISTORY:-$(tail -n 1 "$HOME/.prj_history" 2>/dev/null)}
+  if [ -n "$last_project" ]; then
+    echo "[last project]" >&2
+    echo "[$last_project]\n" >&2
+    cd "$HOME/Projects/$last_project"
+    export PRJ_HISTORY="$last_project"
+    echo "$(mdless --no-pager todo.md)" >&2
+  else
+    echo "Error: Could not find project root directory and no project found in history" >&2
+  fi
+}
+
+ss() {
+  local url=$1
+  if [[ ! "$url" =~ ^https?:// ]]; then
+    url="https://$url"
+  fi
+  local filename="Chrome Screenshot $(date '+%Y-%m-%d at %I.%M.%S %p').png"
+  local filepath="$HOME/Desktop/$filename"
+  chrome --headless --disable-gpu --window-size=1920,1080 --screenshot="$filepath" "$url" && imgcat --width $(tput cols) "$filepath"
+}
+
+htmltopng() {
+  local width=640
+  local height=480
+  while getopts "w:h:" opt; do
+    case $opt in
+      w) width=$OPTARG ;;
+      h) height=$OPTARG ;;
+      *) return 1 ;;
+    esac
+  done
+  shift $((OPTIND - 1))
+
+  local html
+  if [ -t 0 ]; then
+    html=$1
+  else
+    html=$(cat)
+  fi
+  local filename="Chrome Screenshot $(date '+%Y-%m-%d at %I.%M.%S %p').png"
+  local filepath="$HOME/Desktop/$filename"
+  local datauri="data:text/html;base64,$(echo "$html" | base64)"
+  chrome --headless --disable-gpu --disable-extensions --window-size="$width,$height" --screenshot="$filepath" "$datauri"
+  sleep 1
+  cat "$filepath"
+  rm "$filepath"
+}
+
+htmltopdf() {
+  local html
+  local size="A4"
+  local orientation="portrait"
+  while getopts "l" opt; do
+    case $opt in
+      l)
+        size="A4 landscape"
+        orientation="landscape"
+        ;;
+      \?)
+        echo "Invalid option: -$OPTARG" >&2
+        return 1
+        ;;
+    esac
+  done
+  shift $((OPTIND - 1))
+
+  if [ -t 0 ]; then
+    html=$1
+  else
+    html=$(cat)
+  fi
+
+  local filename="HTML to PDF $(date '+%Y-%m-%d at %I.%M.%S %p').pdf"
+  local filepath="$HOME/Desktop/$filename"
+
+  # remove chrome headless header and footer
+  local css="@media print { @page { margin: 0; size: $size; } body { margin: 1.6cm; } }"
+  local datauri="data:text/html;base64,$(echo "<style>$css</style>$html" | base64)"
+  chrome --headless --disable-gpu --disable-extensions --print-to-pdf="$filepath" --no-margins "$datauri"
+  sleep 1
+  cat "$filepath"
+  rm "$filepath"
+}
+
+prependcss() {
+  local html="$(cat -)"
+  local css=""
+  for css_file in "$@"; do
+    css="$css$(cat "$css_file")"
+  done
+  echo "<style>$css</style>$html"
+}
+
+appendjs() {
+  local js_file="$1"
+  shift
+  local argv=("$js_file" "$@")
+  local html="$(cat -)"
+  local js="$(cat "$js_file")"
+  echo "$html<script>const argv = [$(printf '"%s",' "${argv[@]}")]; $js</script>"
+}
+
+function prependhtml() {
+    local prefix=""
+    for arg in "$@"; do
+        prefix="$prefix$arg"
+    done
+    local html="$(cat -)"
+    echo "$prefix$html"
+}
