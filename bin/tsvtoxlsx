@@ -1,0 +1,35 @@
+#!/usr/bin/env python3
+
+import sys
+import csv
+import openpyxl
+from io import BytesIO
+from openpyxl.styles import PatternFill
+from openpyxl.utils.cell import coordinate_to_tuple
+
+# Read tab-separated values from standard input
+reader = csv.reader(sys.stdin, delimiter='\t')
+
+# Create new Excel workbook and worksheet
+wb = openpyxl.Workbook()
+ws = wb.active
+
+# Write values to worksheet
+for i, row in enumerate(reader):
+    for j, cell in enumerate(row):
+        # Set cell value
+        ws.cell(row=i+1, column=j+1, value=cell)
+
+        # Set cell type to number if cell contains a number
+        if cell.isdigit():
+            row_idx, col_idx = coordinate_to_tuple(ws.cell(row=i+1, column=j+1).coordinate)
+            ws.cell(row=row_idx, column=col_idx).value = int(cell)
+
+        # Set background color of first row to light yellow
+        if i == 0:
+            ws.cell(row=i+1, column=j+1).fill = PatternFill(start_color='FFFFE0', end_color='FFFFE0', fill_type='solid')
+
+# Save Excel file to standard output
+buffer = BytesIO()
+wb.save(buffer)
+sys.stdout.buffer.write(buffer.getvalue())

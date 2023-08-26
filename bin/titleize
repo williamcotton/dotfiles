@@ -1,0 +1,12 @@
+#!/usr/bin/env python3
+
+import csv
+import sys
+
+reader = csv.reader(sys.stdin, delimiter='\t')
+header = next(reader)
+titleized_header = [word.replace('_', ' ').title() for word in header]
+writer = csv.writer(sys.stdout, delimiter='\t')
+writer.writerow(titleized_header)
+for row in reader:
+    writer.writerow(row)

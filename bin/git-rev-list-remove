@@ -1,0 +1,26 @@
+#!/usr/bin/env python3
+
+import argparse
+import os
+import subprocess
+
+# Parse command-line arguments
+parser = argparse.ArgumentParser()
+parser.add_argument('--since', required=True, help='Start date (YYYY-MM-DD)')
+parser.add_argument('--until', required=True, help='End date (YYYY-MM-DD)')
+args = parser.parse_args()
+
+# Run git rev-list command to get object IDs in date range
+rev_list_output = subprocess.check_output(['git', 'rev-list', f'--since={args.since}', f'--until={args.until}', '--objects', '--all'])
+object_ids = [line.split()[0] for line in rev_list_output.decode().splitlines()]
+
+# Delete all objects in .git/objects that are not in the date range
+objects_dir = os.path.join('.git', 'objects')
+for dirpath, dirnames, filenames in os.walk(objects_dir):
+    for filename in filenames:
+        object_id = dirpath[len(objects_dir)+1:] + filename
+        if object_id not in object_ids:
+            os.remove(os.path.join(dirpath, filename))
+
+# Rewrite the commit history to remove all objects that are not in the date range
+# subprocess.check_call(['git', 'filter-branch', '--prune-empty', '--tag-name-filter', 'cat', '--index-filter', 'git rm -r --cached --ignore-unmatch .', '--', '--all'] + object_ids)

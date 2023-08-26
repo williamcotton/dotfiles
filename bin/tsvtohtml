@@ -1,0 +1,26 @@
+#!/usr/bin/env python3
+
+import csv
+import sys
+
+def tsv_to_html():
+    reader = csv.reader(sys.stdin, delimiter='\t')
+    rows = list(reader)
+
+    html = '<table>\n'
+    for row in rows:
+        html += '  <tr>\n'
+        for cell in row:
+            html += f'    <td>{cell}</td>\n'
+        html += '  </tr>\n'
+    html += '</table>\n'
+
+    data = rows
+    script = f'<script>const data = {data};</script>\n'
+    html = script + html
+
+    return html
+
+if __name__ == '__main__':
+    html = tsv_to_html()
+    sys.stdout.write(html)

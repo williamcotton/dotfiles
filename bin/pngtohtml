@@ -1,0 +1,13 @@
+#!/usr/bin/env python3
+import base64
+import sys
+
+# Read the input bytes from stdin
+png_bytes = sys.stdin.buffer.read()
+
+# Encode the bytes as a base64 data URI
+data_uri = "data:image/png;base64," + base64.b64encode(png_bytes).decode()
+
+# Output the HTML img tag with the data URI
+html = f'<img src="{data_uri}">'
+sys.stdout.write(html)

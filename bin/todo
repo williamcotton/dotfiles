@@ -1,0 +1,105 @@
+#!/usr/bin/env python3
+
+import os
+import curses
+
+# Get the project name using the same logic as the prj() function
+dir = os.getcwd()
+while dir != "/":
+    if os.path.basename(os.path.dirname(dir)) == "Projects":
+        project_name = os.path.basename(dir)
+        break
+    dir = os.path.dirname(dir)
+else:
+    project_name = ""
+
+# Update the path to the todo file
+TODO_FILE = os.path.join(os.path.expanduser("~/Projects"), project_name, "todo.md")
+
+COMPLETED_ITEM = 1
+INCOMPLETE_ITEM = 2
+SELECTED_ROW = 3
+NOTE = 4
+BACKGROUND = 5
+
+def main(stdscr):
+    # Initialize the curses library
+    curses.initscr()
+    curses.curs_set(0)
+    curses.use_default_colors()
+    curses.init_pair(COMPLETED_ITEM, curses.COLOR_BLUE, -1)
+    curses.init_pair(INCOMPLETE_ITEM, curses.COLOR_RED, -1)
+    curses.init_pair(SELECTED_ROW, curses.COLOR_BLACK, -1)
+    curses.init_pair(NOTE, curses.COLOR_BLACK, -1)
+    curses.init_pair(BACKGROUND, curses.COLOR_WHITE, -1)
+
+    # Set the background color to match the console's background color
+    stdscr.bkgd(curses.color_pair(BACKGROUND))
+
+    # Load the todo file
+    with open(TODO_FILE, "r") as f:
+        todo_items = f.readlines()
+
+    # Initialize the selected item index
+    selected_item = 0
+
+    # Initialize the last todo item index
+    last_todo_item = 0
+
+    is_completed = False
+
+    # Loop until the user quits
+    while True:
+        # Clear the screen
+        stdscr.clear()
+
+        # Print the todo items and notes
+        for i, item in enumerate(todo_items):
+            
+            if item.startswith("- [x]"):
+                is_completed = True
+            elif item.startswith("- [ ]"):
+                is_completed = False
+
+            if i == selected_item:
+                # Highlight the selected item
+                stdscr.addstr(item, curses.color_pair(SELECTED_ROW) | curses.A_BOLD if item.startswith("- [x]") else curses.color_pair(SELECTED_ROW))
+            elif i > last_todo_item and not item.startswith("- ["):
+                # Color notes related to the previous todo item
+                stdscr.addstr(item, curses.color_pair(COMPLETED_ITEM) if is_completed else curses.color_pair(INCOMPLETE_ITEM))
+            else:
+                stdscr.addstr(item, curses.color_pair(COMPLETED_ITEM) if item.startswith("- [x]") else curses.color_pair(INCOMPLETE_ITEM))
+
+            # Update the last todo item index
+            if item.startswith("- ["):
+                last_todo_item = i
+
+        # Refresh the screen
+        stdscr.refresh()
+
+        # Wait for user input
+        key = stdscr.getch()
+
+        # Handle the user input
+        if key == curses.KEY_UP:
+            # Move the selection up
+            selected_item = max(selected_item - 1, 0)
+        elif key == curses.KEY_DOWN:
+            # Move the selection down
+            selected_item = min(selected_item + 1, len(todo_items) - 1)
+        elif key == ord("\n"):
+            # Toggle the selected item
+            if todo_items[selected_item].startswith("- [ ]"):
+                todo_items[selected_item] = todo_items[selected_item].replace("- [ ]", "- [x]", 1)
+            elif todo_items[selected_item].startswith("- [x]"):
+                todo_items[selected_item] = todo_items[selected_item].replace("- [x]", "- [ ]", 1)
+        elif key == ord("q"):
+            # Quit the program
+            break
+
+    # Save the updated todo file
+    with open(TODO_FILE, "w") as f:
+        f.writelines(todo_items)
+
+# Run the main function
+curses.wrapper(main)

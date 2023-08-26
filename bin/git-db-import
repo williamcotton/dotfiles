@@ -1,0 +1,110 @@
+#!/usr/bin/env python3
+
+import sys
+import subprocess
+import mysql.connector
+import re
+
+# Get the command line arguments
+if len(sys.argv) < 3:
+    print("Usage: git-db-import <database_name> <repository_name>")
+    sys.exit(1)
+database_name = sys.argv[1]
+repository_name = sys.argv[2]
+
+# Connect to the MySQL database
+cnx = mysql.connector.connect(host="localhost", database=database_name)
+cursor = cnx.cursor()
+
+commits_table_name = repository_name + "_git_commits"
+
+# Create the clarity_git_commits table if it doesn't exist
+create_commits_table = ("CREATE TABLE IF NOT EXISTS " + commits_table_name + " ("
+                "id INT AUTO_INCREMENT PRIMARY KEY,"
+                "author VARCHAR(255) NOT NULL,"
+                "author_date DATETIME NOT NULL,"
+                "author_email VARCHAR(255) NOT NULL,"
+                "commit_hash VARCHAR(40) NOT NULL,"
+                "commit_date DATETIME NOT NULL,"
+                "committer VARCHAR(255) NOT NULL,"
+                "committer_email VARCHAR(255) NOT NULL,"
+                "title VARCHAR(255) NOT NULL,"
+                "files_changed INT NOT NULL,"
+                "insertions INT NOT NULL,"
+                "deletions INT NOT NULL"
+                ")")
+cursor.execute(create_commits_table)
+
+# Call git log and parse the output
+git_log = subprocess.check_output(['git', 'log', '--pretty=format::::::%an::%ad::%ae::%H::%cd::%cn::%ce::%s', '--shortstat', '--reverse', '--date=format:%Y-%m-%d %H:%M:%S'])
+commits = git_log.decode('utf-8').split(':::::')
+
+print("Inserting commits into " + commits_table_name + " table...")
+# Insert each commit into the database
+for commit in commits:
+    if commit:
+        # Parse the commit data
+        try:
+            commit_data, stats = commit.split('\n', 1)
+            author, author_date, author_email, commit_hash, commit_date, committer, committer_email, title = commit_data.split('::')
+            files_changed, insertions, deletions = 0, 0, 0
+            if 'files changed' in stats or 'file changed' in stats:
+                stats = stats.split(',')[0:3]
+                files_changed = int(stats[0].split()[0])
+                if 'insertion' in stats[1]:
+                    insertions = int(stats[1].split()[0].replace('(+)', ''))
+                if len(stats) > 2 and 'deletion' in stats[2]:
+                    deletions = int(stats[2].split()[0].replace('(-)', ''))
+            # Insert the commit data into the database
+            add_commit = ("INSERT INTO " + repository_name + "_git_commits "
+                        "(author, author_date, author_email, commit_hash, commit_date, committer, committer_email, title, files_changed, insertions, deletions) "
+                        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)")
+            commit_data = (author, author_date, author_email, commit_hash, commit_date, committer, committer_email, title, files_changed, insertions, deletions)
+            cursor.execute(add_commit, commit_data)
+        except:
+            print("Error parsing commit data: " + commit)
+
+file_changes_table_name = repository_name + "_git_file_changes"
+
+# Create the clarity_git_file_changes table if it doesn't exist
+create_file_changes_table = ("CREATE TABLE IF NOT EXISTS " + file_changes_table_name + " ("
+                "id INT AUTO_INCREMENT PRIMARY KEY,"
+                "commit_hash VARCHAR(40) NOT NULL,"
+                "file_name VARCHAR(255) NOT NULL,"
+                "insertions INT NOT NULL,"
+                "deletions INT NOT NULL"
+                ")")
+cursor.execute(create_file_changes_table)
+
+# Call git log and parse the output
+git_log = subprocess.check_output(['git', 'log', '--numstat', '--reverse'])
+commits = git_log.decode('utf-8').split('\ncommit ')
+commits[0] = commits[0].split("commit ")[1]
+
+print("Inserting file changes into " + file_changes_table_name + " table...")
+# Insert each file change into the database
+first_happened = False
+for commit in commits:
+    if commit:
+        commit_lines = commit.split('\n')
+        commit_hash = commit_lines[0]
+        file_changes = []
+        for line in commit_lines:
+            match = re.match(r'^(\d+)\t(\d+)\t(.+)$', line)
+            if match:
+                insertions, deletions, file_name = match.groups()
+                file_changes.append({'insertions': insertions, 'deletions': deletions, 'file_name': file_name})
+
+        for file_change in file_changes:
+            if file_change:
+                # Insert the file change into the database
+                add_file_change = ("INSERT INTO " + repository_name + "_git_file_changes "
+                                   "(commit_hash, file_name, insertions, deletions) "
+                                   "VALUES (%s, %s, %s, %s)")
+                file_change_data = (commit_hash, file_change['file_name'], file_change['insertions'], file_change['deletions'])
+                cursor.execute(add_file_change, file_change_data)
+
+# Commit the changes and close the database connection
+cnx.commit()
+cursor.close()
+cnx.close()
