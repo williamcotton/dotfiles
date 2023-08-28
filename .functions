@@ -18,11 +18,11 @@ dataurl() {
 
 # Start an HTTP server from a directory, optionally specifying the port
 function server() {
-	local port="${1:-8000}"
-	open "http://localhost:${port}/"
-	# Set the default Content-Type to `text/plain` instead of `application/octet-stream`
-	# And serve everything as UTF-8 (although not technically correct, this doesn’t break anything for binary files)
-	python -c $'import SimpleHTTPServer;\nmap = SimpleHTTPServer.SimpleHTTPRequestHandler.extensions_map;\nmap[""] = "text/plain";\nfor key, value in map.items():\n\tmap[key] = value + ";charset=UTF-8";\nSimpleHTTPServer.test();' "$port"
+    local port="${1:-8000}"
+    python -m http.server &
+    sleep 0.1
+    open "http://localhost:${port}/"
+    fg
 }
 
 # Test if HTTP compression (RFC 2616 + SDCH) is enabled for a given URL.
@@ -129,6 +129,14 @@ get_project_name() {
 
 get_project_database_name() {
   local project_name=$(get_project_name)
+  local db_file="$HOME/Projects/${project_name}/.db"
+  if [ -f "$db_file" ]; then
+    local db_name=$(grep -o 'NAME=[^[:space:]]*' "$db_file" | cut -d= -f2)
+    if [ -n "$db_name" ]; then
+      echo "$db_name"
+      return
+    fi
+  fi
   echo "$project_name" | sed 's/-/_/g'
 }
 
@@ -140,7 +148,7 @@ mysql_project_database() {
 alias mpd='mysql_project_database'
 
 get_last_command() {
-  local last_command=$(awk '{printf "%s", $0} /;$/ {print ""}' "$1" | tail -n 1 | sed 's/;$//')
+  local last_command=$(lastsql $1)
   echo "$last_command"
 }
 
