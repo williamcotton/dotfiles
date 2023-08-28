@@ -1,0 +1,72 @@
+#!/usr/bin/env node
+
+const path = require('path');
+const { parse } = require('csv-parse');
+const { renderToStaticMarkup } = require('react-dom/server');
+const { createElement } = require('react');
+const yargs = require('yargs');
+const tsNode = require('ts-node');
+
+// Parse the command-line arguments
+const argv = yargs
+  .usage('Usage: $0 -c [component] [args...]')
+  .option('c', {
+    alias: 'component',
+    describe: 'Path to the React component file',
+    demandOption: true,
+    type: 'string'
+  })
+  .argv;
+
+// Extract the named arguments from the command-line arguments
+const namedArgs = {};
+for (let i = 2; i < process.argv.length; i++) {
+  const arg = process.argv[i];
+  if (arg.startsWith('--')) {
+    const argName = arg.slice(2);
+    const argValue = process.argv[i + 1];
+    namedArgs[argName] = argValue;
+    i++;
+  }
+}
+
+// Register ts-node to compile TypeScript and JSX code
+tsNode.register({
+  transpileOnly: true,
+  compilerOptions: {
+    module: 'NodeNext',
+    moduleResolution: 'NodeNext',
+    target: 'es6',
+    jsx: 'react'
+  }
+});
+
+// Read the TSV data from stdin
+const tsvData = [];
+process.stdin
+  .pipe(parse({ delimiter: '\t', relax_column_count: true }))
+  .on('data', (row) => {
+    tsvData.push(row);
+  })
+  .on('end', async () => {
+    // Read the React component file
+    const componentFile = path.resolve(argv.component);
+
+    // Load the React component file using require
+    const component = require(componentFile).default;
+
+    // Generate the React component props using the named arguments and TSV data
+    const componentProps = {
+      data: tsvData,
+      ...namedArgs
+    };
+
+    // Generate the React component using the component and props
+    const componentInstance = createElement(component, componentProps);
+
+    // Render the component to HTML
+    const html = renderToStaticMarkup(componentInstance);
+
+    // Write the HTML to stdout
+    process.stdout.write(html);
+  });

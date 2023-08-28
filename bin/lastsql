@@ -1,0 +1,34 @@
+#!/usr/bin/env python
+
+import sys
+
+# Get filename from command-line argument (or use default)
+if len(sys.argv) > 1:
+    filename = sys.argv[1]
+else:
+    filename = None
+
+# Read input from file or stdin
+if filename is not None:
+    with open(filename, 'r') as f:
+        input_str = f.read()
+else:
+    input_str = sys.stdin.read()
+
+# Find last semicolon
+last_semicolon = input_str.rfind(';')
+
+# Find previous semicolon
+prev_semicolon = input_str.rfind(';', 0, last_semicolon)
+
+# Extract last SQL statement
+if prev_semicolon >= 0:
+    last_command = input_str[prev_semicolon+1:last_semicolon].strip()
+else:
+    last_command = input_str.strip()
+
+# Print last command (or error message if not found)
+if last_command is not None:
+    print(last_command)
+else:
+    print('Error: no SQL command found in input')

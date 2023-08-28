@@ -5,31 +5,53 @@ import argparse
 import matplotlib.pyplot as plt
 import io
 import csv
+import base64
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--date-column', type=str, required=True, help='Name of the date column')
 parser.add_argument('-v', '--value-column', type=str, required=True, help='Name of the value column')
+parser.add_argument('-u', '--data-uri', action='store_true', help='Output a data URI instead of a PNG image')
+parser.add_argument('-s', '--script-file', type=str, help='Path to a script file to execute for creating the plot')
 args = parser.parse_args()
 
 # Read tab-separated values from standard input
 reader = csv.DictReader(sys.stdin, delimiter='\t')
 
 # Parse data into lists
+rows = []
 dates = []
 values = []
 for row in reader:
+    rows.append(row)
     dates.append(row[args.date_column])
     values.append(float(row[args.value_column]))
 
+# Execute script file if provided
+if args.script_file:
+    # In the calling script
+    globals_dict = globals()
+    with open(args.script_file) as f:
+        script = f.read()
+    exec(script, {'plt': plt, 'rows': rows, 'dates': dates, 'values': values, 'sys': sys, 'args': args}, globals_dict)
+    fig = globals_dict['fig']
+    ax = globals_dict['ax']
+
 # Create plot
-fig, ax = plt.subplots()
-ax.plot(dates, values)
+else:
+    fig, ax = plt.subplots()
+    ax.plot(dates, values)
 
 # Save plot to PNG image in memory
 buffer = io.BytesIO()
 plt.savefig(buffer, format='png')
 plt.close(fig)
 
-# Write PNG image to standard output
-sys.stdout.buffer.write(buffer.getvalue())
+# Convert PNG image to base64-encoded string
+if args.data_uri:
+    png_data = base64.b64encode(buffer.getvalue()).decode('utf-8')
+    data_uri = f'data:image/png;base64,{png_data}'
+    sys.stdout.write(data_uri)
+else:
+    # Write PNG image to standard output
+    sys.stdout.buffer.write(buffer.getvalue())
