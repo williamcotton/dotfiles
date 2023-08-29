@@ -116,16 +116,20 @@ function killa() {
   echo "Killed process with PID: $pid"
 }
 
-get_project_name() {
+set_project_name() {
   local dir=$(pwd)
   while [ "$dir" != "/" ]; do
     if [[ "$dir" =~ ^(.*/)?Projects/([^/]+)/?$ ]]; then
-      echo "${match[2]}"
+      export PRJ_NAME="${match[2]}"
+      export PRJ_DIR="$HOME/Projects/${match[2]}"
       return
     fi
     dir=$(dirname "$dir")
   done
 }
+set_project_name
+
+get_project_name() { echo "$PRJ_NAME" }
 
 get_project_database_name() {
   local project_name=$(get_project_name)
