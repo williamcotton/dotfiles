@@ -1,0 +1,37 @@
+#!/usr/bin/env python
+
+import subprocess
+import sys
+
+# Get the command from the command line arguments
+command = " ".join(sys.argv[1:])
+
+# Split the command into individual steps
+steps = command.split(" | ")
+
+# Create a list to store the output of each step
+step_output = []
+
+# Execute each step of the command and store output in a temporary buffer
+for i, step in enumerate(steps):
+    # Split the step into individual arguments
+    args = step.split()
+
+    # Create a subprocess for the step
+    if i == 0:
+        # For the first step, set stdin to None
+        proc = subprocess.Popen(args, stdin=None, stdout=subprocess.PIPE, universal_newlines=True)
+    else:
+        # For subsequent steps, set stdin to the output of the previous step
+        proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
+        proc.stdin.write(step_output[-1])
+
+    # Wait for the subprocess to complete and get the output
+    output = proc.communicate()[0]
+    step_output.append(output)
+
+    # Print the output of the step
+    print(f"{i + 1}: {step}\n----------------\n{output}")
+
+# Print the final output of the command
+print(f"================\n{step_output[-1]}")

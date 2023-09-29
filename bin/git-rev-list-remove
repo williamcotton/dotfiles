@@ -3,6 +3,8 @@
 import argparse
 import os
 import subprocess
+import sys
+import select
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser()
@@ -14,13 +16,29 @@ args = parser.parse_args()
 rev_list_output = subprocess.check_output(['git', 'rev-list', f'--since={args.since}', f'--until={args.until}', '--objects', '--all'])
 object_ids = [line.split()[0] for line in rev_list_output.decode().splitlines()]
 
+# Read additional commit hashes from standard input
+additional_commits = []
+if select.select([sys.stdin,],[],[],0.0)[0]:
+    additional_commits = [line.strip() for line in sys.stdin.readlines()]
+
+# Add additional commit hashes to object IDs list
+object_ids += additional_commits
+
+print(f'Found {len(object_ids)} objects in date range')
+
+# print(additional_commits)
+
+# exit()
+
 # Delete all objects in .git/objects that are not in the date range
 objects_dir = os.path.join('.git', 'objects')
 for dirpath, dirnames, filenames in os.walk(objects_dir):
     for filename in filenames:
         object_id = dirpath[len(objects_dir)+1:] + filename
         if object_id not in object_ids:
+            print(f'Deleting {object_id}')
             os.remove(os.path.join(dirpath, filename))
+            # subprocess.check_call(['git', 'update-ref', '-d', f'refs/objects/{object_id}'])
 
 # Rewrite the commit history to remove all objects that are not in the date range
 # subprocess.check_call(['git', 'filter-branch', '--prune-empty', '--tag-name-filter', 'cat', '--index-filter', 'git rm -r --cached --ignore-unmatch .', '--', '--all'] + object_ids)

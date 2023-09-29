@@ -19,7 +19,7 @@ dataurl() {
 # Start an HTTP server from a directory, optionally specifying the port
 function server() {
     local port="${1:-8000}"
-    python -m http.server &
+    PYTHONIOENCODING=utf-8 python -m http.server &
     sleep 0.1
     open "http://localhost:${port}/"
     fg
@@ -331,3 +331,27 @@ function prependhtml() {
     local html="$(cat -)"
     echo "$prefix$html"
 }
+
+# Define the adeline function
+adeline() {
+  # Get a random image file from the ~/Pictures/ada directory
+  image_file=$(ls ~/Pictures/ada | shuf -n 1)
+
+  # Display the image using imgcat
+  imgcat ~/Pictures/ada/$image_file
+}
+
+# Create an alias for the adeline function
+alias ada="adeline"
+
+# Define the lawrence function
+lawrence() {
+  # Get a random image file from the ~/Pictures/ren directory
+  image_file=$(ls ~/Pictures/ren | shuf -n 1)
+
+  # Display the image using imgcat
+  imgcat ~/Pictures/ren/$image_file
+}
+
+# Create an alias for the lawrence function
+alias ren="lawrence"

@@ -1,0 +1,317 @@
+Created by PLY version 3.11 (http://www.dabeaz.com/ply)
+
+Grammar
+
+Rule 0     S' -> program
+Rule 1     program -> command
+Rule 2     program -> command command
+Rule 3     command -> fields LBRACE display RBRACE
+Rule 4     fields -> FIELDNAME COMMA FIELDNAME
+Rule 5     fields -> LBRACKET FIELDNAME COMMA FIELDNAME RBRACKET COMMA FIELDNAME
+Rule 6     display -> LINE style
+Rule 7     display -> BAR style
+Rule 8     display -> STACKBAR stackbar_style
+Rule 9     style -> WIDTH DRAW_STYLE COLOR
+Rule 10    stackbar_style -> WIDTH LBRACKET DRAW_STYLE COLOR COMMA DRAW_STYLE COLOR RBRACKET
+
+Terminals, with rules where they appear
+
+BAR                  : 7
+COLOR                : 9 10 10
+COMMA                : 4 5 5 10
+DRAW_STYLE           : 9 10 10
+FIELDNAME            : 4 4 5 5 5
+LBRACE               : 3
+LBRACKET             : 5 10
+LINE                 : 6
+RBRACE               : 3
+RBRACKET             : 5 10
+STACKBAR             : 8
+WIDTH                : 9 10
+error                : 
+
+Nonterminals, with rules where they appear
+
+command              : 1 2 2
+display              : 3
+fields               : 3
+program              : 0
+stackbar_style       : 8
+style                : 6 7
+
+Parsing method: LALR
+
+state 0
+
+    (0) S' -> . program
+    (1) program -> . command
+    (2) program -> . command command
+    (3) command -> . fields LBRACE display RBRACE
+    (4) fields -> . FIELDNAME COMMA FIELDNAME
+    (5) fields -> . LBRACKET FIELDNAME COMMA FIELDNAME RBRACKET COMMA FIELDNAME
+
+    FIELDNAME       shift and go to state 4
+    LBRACKET        shift and go to state 5
+
+    program                        shift and go to state 1
+    command                        shift and go to state 2
+    fields                         shift and go to state 3
+
+state 1
+
+    (0) S' -> program .
+
+
+
+state 2
+
+    (1) program -> command .
+    (2) program -> command . command
+    (3) command -> . fields LBRACE display RBRACE
+    (4) fields -> . FIELDNAME COMMA FIELDNAME
+    (5) fields -> . LBRACKET FIELDNAME COMMA FIELDNAME RBRACKET COMMA FIELDNAME
+
+    $end            reduce using rule 1 (program -> command .)
+    FIELDNAME       shift and go to state 4
+    LBRACKET        shift and go to state 5
+
+    command                        shift and go to state 6
+    fields                         shift and go to state 3
+
+state 3
+
+    (3) command -> fields . LBRACE display RBRACE
+
+    LBRACE          shift and go to state 7
+
+
+state 4
+
+    (4) fields -> FIELDNAME . COMMA FIELDNAME
+
+    COMMA           shift and go to state 8
+
+
+state 5
+
+    (5) fields -> LBRACKET . FIELDNAME COMMA FIELDNAME RBRACKET COMMA FIELDNAME
+
+    FIELDNAME       shift and go to state 9
+
+
+state 6
+
+    (2) program -> command command .
+
+    $end            reduce using rule 2 (program -> command command .)
+
+
+state 7
+
+    (3) command -> fields LBRACE . display RBRACE
+    (6) display -> . LINE style
+    (7) display -> . BAR style
+    (8) display -> . STACKBAR stackbar_style
+
+    LINE            shift and go to state 11
+    BAR             shift and go to state 12
+    STACKBAR        shift and go to state 13
+
+    display                        shift and go to state 10
+
+state 8
+
+    (4) fields -> FIELDNAME COMMA . FIELDNAME
+
+    FIELDNAME       shift and go to state 14
+
+
+state 9
+
+    (5) fields -> LBRACKET FIELDNAME . COMMA FIELDNAME RBRACKET COMMA FIELDNAME
+
+    COMMA           shift and go to state 15
+
+
+state 10
+
+    (3) command -> fields LBRACE display . RBRACE
+
+    RBRACE          shift and go to state 16
+
+
+state 11
+
+    (6) display -> LINE . style
+    (9) style -> . WIDTH DRAW_STYLE COLOR
+
+    WIDTH           shift and go to state 18
+
+    style                          shift and go to state 17
+
+state 12
+
+    (7) display -> BAR . style
+    (9) style -> . WIDTH DRAW_STYLE COLOR
+
+    WIDTH           shift and go to state 18
+
+    style                          shift and go to state 19
+
+state 13
+
+    (8) display -> STACKBAR . stackbar_style
+    (10) stackbar_style -> . WIDTH LBRACKET DRAW_STYLE COLOR COMMA DRAW_STYLE COLOR RBRACKET
+
+    WIDTH           shift and go to state 21
+
+    stackbar_style                 shift and go to state 20
+
+state 14
+
+    (4) fields -> FIELDNAME COMMA FIELDNAME .
+
+    LBRACE          reduce using rule 4 (fields -> FIELDNAME COMMA FIELDNAME .)
+
+
+state 15
+
+    (5) fields -> LBRACKET FIELDNAME COMMA . FIELDNAME RBRACKET COMMA FIELDNAME
+
+    FIELDNAME       shift and go to state 22
+
+
+state 16
+
+    (3) command -> fields LBRACE display RBRACE .
+
+    FIELDNAME       reduce using rule 3 (command -> fields LBRACE display RBRACE .)
+    LBRACKET        reduce using rule 3 (command -> fields LBRACE display RBRACE .)
+    $end            reduce using rule 3 (command -> fields LBRACE display RBRACE .)
+
+
+state 17
+
+    (6) display -> LINE style .
+
+    RBRACE          reduce using rule 6 (display -> LINE style .)
+
+
+state 18
+
+    (9) style -> WIDTH . DRAW_STYLE COLOR
+
+    DRAW_STYLE      shift and go to state 23
+
+
+state 19
+
+    (7) display -> BAR style .
+
+    RBRACE          reduce using rule 7 (display -> BAR style .)
+
+
+state 20
+
+    (8) display -> STACKBAR stackbar_style .
+
+    RBRACE          reduce using rule 8 (display -> STACKBAR stackbar_style .)
+
+
+state 21
+
+    (10) stackbar_style -> WIDTH . LBRACKET DRAW_STYLE COLOR COMMA DRAW_STYLE COLOR RBRACKET
+
+    LBRACKET        shift and go to state 24
+
+
+state 22
+
+    (5) fields -> LBRACKET FIELDNAME COMMA FIELDNAME . RBRACKET COMMA FIELDNAME
+
+    RBRACKET        shift and go to state 25
+
+
+state 23
+
+    (9) style -> WIDTH DRAW_STYLE . COLOR
+
+    COLOR           shift and go to state 26
+
+
+state 24
+
+    (10) stackbar_style -> WIDTH LBRACKET . DRAW_STYLE COLOR COMMA DRAW_STYLE COLOR RBRACKET
+
+    DRAW_STYLE      shift and go to state 27
+
+
+state 25
+
+    (5) fields -> LBRACKET FIELDNAME COMMA FIELDNAME RBRACKET . COMMA FIELDNAME
+
+    COMMA           shift and go to state 28
+
+
+state 26
+
+    (9) style -> WIDTH DRAW_STYLE COLOR .
+
+    RBRACE          reduce using rule 9 (style -> WIDTH DRAW_STYLE COLOR .)
+
+
+state 27
+
+    (10) stackbar_style -> WIDTH LBRACKET DRAW_STYLE . COLOR COMMA DRAW_STYLE COLOR RBRACKET
+
+    COLOR           shift and go to state 29
+
+
+state 28
+
+    (5) fields -> LBRACKET FIELDNAME COMMA FIELDNAME RBRACKET COMMA . FIELDNAME
+
+    FIELDNAME       shift and go to state 30
+
+
+state 29
+
+    (10) stackbar_style -> WIDTH LBRACKET DRAW_STYLE COLOR . COMMA DRAW_STYLE COLOR RBRACKET
+
+    COMMA           shift and go to state 31
+
+
+state 30
+
+    (5) fields -> LBRACKET FIELDNAME COMMA FIELDNAME RBRACKET COMMA FIELDNAME .
+
+    LBRACE          reduce using rule 5 (fields -> LBRACKET FIELDNAME COMMA FIELDNAME RBRACKET COMMA FIELDNAME .)
+
+
+state 31
+
+    (10) stackbar_style -> WIDTH LBRACKET DRAW_STYLE COLOR COMMA . DRAW_STYLE COLOR RBRACKET
+
+    DRAW_STYLE      shift and go to state 32
+
+
+state 32
+
+    (10) stackbar_style -> WIDTH LBRACKET DRAW_STYLE COLOR COMMA DRAW_STYLE . COLOR RBRACKET
+
+    COLOR           shift and go to state 33
+
+
+state 33
+
+    (10) stackbar_style -> WIDTH LBRACKET DRAW_STYLE COLOR COMMA DRAW_STYLE COLOR . RBRACKET
+
+    RBRACKET        shift and go to state 34
+
+
+state 34
+
+    (10) stackbar_style -> WIDTH LBRACKET DRAW_STYLE COLOR COMMA DRAW_STYLE COLOR RBRACKET .
+
+    RBRACE          reduce using rule 10 (stackbar_style -> WIDTH LBRACKET DRAW_STYLE COLOR COMMA DRAW_STYLE COLOR RBRACKET .)
+

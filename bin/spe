@@ -1,0 +1,128 @@
+#!/usr/bin/env python
+
+import curses
+import subprocess
+import sys
+import os
+
+def get_command_data(command):
+    # Split the command into individual steps
+    steps = command.split(" | ")
+
+    # Create a list to store the output of each step
+    step_output = []
+
+    # Execute each step of the command and store output in a temporary buffer
+    for i, step in enumerate(steps):
+        # Split the step into individual arguments
+        args = step.split()
+
+        # Expand the ~ character in any argument that contains a file path
+        for j, arg in enumerate(args):
+            if "~" in arg:
+                args[j] = os.path.expanduser(arg)
+
+        # Create a subprocess for the step
+        if i == 0:
+            # For the first step, set stdin to None
+            proc = subprocess.Popen(args, stdin=None, stdout=subprocess.PIPE, universal_newlines=True)
+        else:
+            # For subsequent steps, set stdin to the output of the previous step
+            proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
+            proc.stdin.write(step_output[-1])
+
+        # Wait for the subprocess to complete and get the output
+        output = proc.communicate()[0]
+        step_output.append(output)
+
+    data = []
+    for i, step in enumerate(steps):
+        data.append({"command": step, "output": step_output[i].strip(), "pad_pos": 0})
+
+    return data
+
+def update_left_column(left_column, selection_index, data):
+    left_column.clear()
+    left_column.bkgd(curses.color_pair(1))
+    for i, item in enumerate(data):
+        if i == selection_index:
+            left_column.addstr(i, 0, item["command"], curses.A_REVERSE)
+        else:
+            left_column.addstr(i, 0, item["command"])
+    left_column.refresh()
+
+def update_main_window(main_window, selection_index, pad_pos, data, left_column_width):
+    main_window.clear()
+    main_window.bkgd(curses.color_pair(2))
+    main_window.scrollok(True)
+    main_window.addstr(data[selection_index]["output"])
+    main_window.refresh(pad_pos, 0, 0,  left_column_width, curses.LINES - 1, curses.COLS - 1)
+
+# Get the command from the command line arguments
+data = get_command_data(" ".join(sys.argv[1:]))
+
+def main(stdscr):
+    # Initialize the curses screen
+    curses.curs_set(0)
+    curses.use_default_colors()
+    curses.init_pair(1, curses.COLOR_WHITE, -1)
+    curses.init_pair(2, curses.COLOR_WHITE, -1)
+
+    selection_index = 0
+
+    # left column width is the longest of the data["command"] strings
+    left_column_width = max([len(item["command"]) for item in data]) + 1
+
+    # Set up the left-hand column
+    left_column = curses.newwin(curses.LINES, left_column_width, 0, 0)
+    update_left_column(left_column, selection_index, data)
+
+    # Set up the main window pad
+    main_window = curses.newpad(100, 100)
+    update_main_window(main_window, selection_index, data[selection_index]["pad_pos"], data, left_column_width)
+
+    # Loop until the user presses 'q'
+    while True:
+        # Check if the terminal window has been resized
+        if curses.is_term_resized(curses.LINES, curses.COLS):
+            # Clear the screen and refresh the windows
+            stdscr.clear()
+            stdscr.refresh()
+            left_column.resize(curses.LINES - 2,  left_column_width)
+            left_column.refresh()
+            main_window.resize(100, curses.COLS -  left_column_width)
+            main_window.refresh(0, 0, 0, left_column_width, curses.LINES - 2, curses.COLS - 1)
+
+        # Update the left column and main window
+        update_left_column(left_column, selection_index, data)
+        update_main_window(main_window, selection_index, data[selection_index]["pad_pos"], data, left_column_width)
+
+        # Wait for user input
+        ch = stdscr.getch()
+
+        # If the user presses 'q', exit the loop
+        if ch == ord('q'):
+            break
+
+        # Handle arrow key input
+        if ch == curses.KEY_UP:
+            selection_index = max(selection_index - 1, 0)
+        elif ch == curses.KEY_DOWN:
+            selection_index = min(selection_index + 1, len(data) - 1)
+
+        # Handle page up and page down (j and k)
+        if ch == ord('j'):
+            data[selection_index]["pad_pos"] = min(data[selection_index]["pad_pos"] + 1, 100 - curses.LINES)
+        elif ch == ord('k'):
+            data[selection_index]["pad_pos"] = max(data[selection_index]["pad_pos"] - 1, 0)
+
+        # Update the screen
+        update_left_column(left_column, selection_index, data)
+        update_main_window(main_window, selection_index, data[selection_index]["pad_pos"], data, left_column_width)
+
+    # Tear down the curses environment
+    curses.endwin()
+
+# Set up the curses environment and run the main function
+stdscr = curses.initscr()
+curses.wrapper(main)

@@ -1,0 +1,129 @@
+#!/usr/bin/env python3c
+
+import sys
+import csv
+import matplotlib.pyplot as plt
+from ply import lex, yacc
+
+# Define the reserved words
+reserved = {
+    'line': 'LINE',
+    'bar': 'BAR',
+    'stackbar': 'STACKBAR',
+    'solid': 'DRAW_STYLE',
+    'dashed': 'DRAW_STYLE',
+    'dotted': 'DRAW_STYLE',
+    'red': 'COLOR',
+    'green': 'COLOR',
+    'blue': 'COLOR',
+    'yellow': 'COLOR',    
+}
+
+# Define the lexer tokens
+tokens = (
+    'FIELDNAME',
+    'WIDTH',
+    'COMMA',
+    'LBRACE',
+    'RBRACE',
+    'LBRACKET',
+    'RBRACKET',
+) + tuple(set(reserved.values()))
+
+# Define the lexer rules
+t_COMMA = r','
+t_LBRACE = r'\{'
+t_RBRACE = r'\}'
+t_LBRACKET = r'\['
+t_RBRACKET = r'\]'
+t_WIDTH = r'\d+px'
+t_COLOR = r'(red|green|blue|yellow|\#\w{6})'
+t_DRAW_STYLE = r'(solid|dashed|dotted)'
+
+def t_FIELDNAME(t):
+    r'[a-zA-Z_][a-zA-Z0-9_]*' # field names must start with a letter or underscore
+    t.type = reserved.get(t.value, 'FIELDNAME') # Check for reserved words
+    return t
+
+t_ignore  = ' \t' # ignore whitespace
+
+def t_error(t):
+    print("Unknown token:", t.value)
+    t.lexer.skip(1)
+
+# Commands for matplotlib
+commands = []
+command = {}
+
+# Define the parser rules
+def p_program(p):
+    '''program : command
+               | command command'''
+    pass
+
+def p_command(p):
+    '''command : fields LBRACE display RBRACE''' # : fields "{" display "}"
+    commands.append(command.copy())
+    pass
+
+def p_fields(p):
+    '''fields : FIELDNAME COMMA FIELDNAME
+              | LBRACKET FIELDNAME COMMA FIELDNAME RBRACKET COMMA FIELDNAME''' # : fieldname, fieldname 
+    command.update({'x_fieldname': p[1], 'y_fieldname': p[3]})
+    pass
+
+def p_display(p):
+    '''display : LINE style
+               | BAR style
+               | STACKBAR stackbar_style'''
+    command.update({'plot_style': p[1]})
+    pass
+
+def p_style(p):
+    '''style : WIDTH DRAW_STYLE COLOR'''
+    command.update({'width': int(p[1][:-2]), 'draw_style': p[2], 'color': p[3]})
+    pass
+
+def p_stackbar_style(p):
+    '''stackbar_style : WIDTH LBRACKET DRAW_STYLE COLOR COMMA DRAW_STYLE COLOR RBRACKET''' # : width [draw_style color, draw_style color]
+    pass
+
+def p_error(p):
+    print("Syntax error in input:", p)
+
+# Build the lexer and parser
+lexer = lex.lex()
+parser = yacc.yacc()
+
+# Parse the input arguments
+parser.parse(sys.argv[1])
+
+# Read the CSV data from stdin
+reader = csv.DictReader(sys.stdin)
+data = {k: [] for k in reader.fieldnames}
+for row in reader:
+    for k, v in row.items():
+        data[k].append(v)
+
+# Generate the plot
+fig, ax = plt.subplots()
+
+# Iterate over the commands array and create the respective plot types
+for command in commands:
+    x_value = [float(x) for x in data[command['x_fieldname']]]
+    y_value = data[command['y_fieldname']]
+    color = command['color']
+    width = command['width']
+    if command['plot_style'] == 'line':
+        ax.plot(y_value, x_value, color=color, linewidth=width)
+    elif command['plot_style'] == 'bar':
+        ax.bar(y_value, x_value, color=color, width=width / 50, alpha=0.5)
+
+# Update the legend names and labels
+legend_names = [command['x_fieldname'].capitalize() for command in commands]
+ax.legend(legend_names)
+ax.set_xlabel(commands[0]['y_fieldname'].capitalize())
+ax.set_ylabel('Count')
+
+# Save the plot to stdout
+plt.savefig(sys.stdout.buffer, format='png')

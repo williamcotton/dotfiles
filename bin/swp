@@ -1,0 +1,35 @@
+#!/usr/bin/env xcrun -sdk macosx swift
+
+// Displays UI in an NSWindow which can interact with the commandline
+// Usage: `echo "Bar" | ./swift-ui-commandline-tool.swift`
+import Foundation
+import SwiftUI
+
+extension CommandLine {
+  static let input: String = { AnyIterator { readLine() }.joined() }()
+}
+
+struct ContentView: View {
+    var body: some View {
+        VStack {
+            Text("Hello, George!")
+            Button("Print \"Foo\"") { print("Foo") }
+            Button("Echo Input") { print(CommandLine.input) }
+            Button("Done") { exit(0) }
+        }
+    }
+}
+
+struct App: SwiftUI.App {
+  var body: some Scene {
+    WindowGroup {
+        ContentView()
+            .padding(100)
+            .onAppear {
+                NSApp.activate(ignoringOtherApps: true)
+            }
+    }
+      .windowStyle(HiddenTitleBarWindowStyle())
+  }
+}
+App.main()
