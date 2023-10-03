@@ -1,9 +1,38 @@
-#!/usr/bin/env python3c
+#!/usr/bin/env python3
+
+# ### plt - a command line tool for plotting data
+#
+# ## example usage
+#
+# ```shell
+# $ cat data.csv | plt "insertions, date { line 1px solid red }" | imgcat --width=100
+# $ cat data.csv | plt "deletions, date { bar 20px solid green }" | imgcat --width=100
+# $ cat data.csv | plt "[insertions, deletions], date { stackbar 20px [solid orange, solid blue]}" > chart.png
+#
+# $ plt "insertions, date { line 5px solid red } deletions, date { bar 20px solid #DDFF21 }" < data.csv > combined.png
+# ```
+#
+# ## grammar
+#
+# ```ebnf
+# program = command | command command;
+# command = fields "{" display "}";
+# fields = FIELDNAME "," FIELDNAME | "[" FIELDNAME "," FIELDNAME "]" "," FIELDNAME;
+# display = "line" style | "bar" style | "stackbar" stackbar_style;
+# style = WIDTH DRAW_STYLE COLOR;
+# stackbar_style = WIDTH "[" DRAW_STYLE COLOR "," DRAW_STYLE COLOR "]";
+# FIELDNAME = [a-zA-Z0-9_]+;
+# WIDTH = [0-9]+ "px";
+# DRAW_STYLE = "solid" | "dashed" | "dotted";
+# COLOR = "red" | "green" | "blue" | "orange" | "#" [0-9a-fA-F]{6};
+# ```
+
 
 import sys
 import csv
 import matplotlib.pyplot as plt
 from ply import lex, yacc
+import datetime
 
 # Define the reserved words
 reserved = {
@@ -16,28 +45,18 @@ reserved = {
     'red': 'COLOR',
     'green': 'COLOR',
     'blue': 'COLOR',
-    'yellow': 'COLOR',    
+    'orange': 'COLOR',    
 }
 
 # Define the lexer tokens
 tokens = (
     'FIELDNAME',
     'WIDTH',
-    'COMMA',
-    'LBRACE',
-    'RBRACE',
-    'LBRACKET',
-    'RBRACKET',
 ) + tuple(set(reserved.values()))
 
 # Define the lexer rules
-t_COMMA = r','
-t_LBRACE = r'\{'
-t_RBRACE = r'\}'
-t_LBRACKET = r'\['
-t_RBRACKET = r'\]'
 t_WIDTH = r'\d+px'
-t_COLOR = r'(red|green|blue|yellow|\#\w{6})'
+t_COLOR = r'(red|green|blue|orange|\#\w{6})'
 t_DRAW_STYLE = r'(solid|dashed|dotted)'
 
 def t_FIELDNAME(t):
@@ -51,6 +70,8 @@ def t_error(t):
     print("Unknown token:", t.value)
     t.lexer.skip(1)
 
+literals = ['[', ']', '{', '}', ',']
+
 # Commands for matplotlib
 commands = []
 command = {}
@@ -62,13 +83,13 @@ def p_program(p):
     pass
 
 def p_command(p):
-    '''command : fields LBRACE display RBRACE''' # : fields "{" display "}"
+    '''command : fields '{' display '}' '''
     commands.append(command.copy())
     pass
 
 def p_fields(p):
-    '''fields : FIELDNAME COMMA FIELDNAME
-              | LBRACKET FIELDNAME COMMA FIELDNAME RBRACKET COMMA FIELDNAME''' # : fieldname, fieldname 
+    '''fields : FIELDNAME ',' FIELDNAME
+              | '[' FIELDNAME ',' FIELDNAME ']' ',' FIELDNAME'''
     command.update({'x_fieldname': p[1], 'y_fieldname': p[3]})
     pass
 
@@ -85,7 +106,7 @@ def p_style(p):
     pass
 
 def p_stackbar_style(p):
-    '''stackbar_style : WIDTH LBRACKET DRAW_STYLE COLOR COMMA DRAW_STYLE COLOR RBRACKET''' # : width [draw_style color, draw_style color]
+    '''stackbar_style : WIDTH '[' DRAW_STYLE COLOR ',' DRAW_STYLE COLOR ']' '''
     pass
 
 def p_error(p):
@@ -106,7 +127,7 @@ for row in reader:
         data[k].append(v)
 
 # Generate the plot
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(8, 5))
 
 # Iterate over the commands array and create the respective plot types
 for command in commands:
@@ -122,8 +143,14 @@ for command in commands:
 # Update the legend names and labels
 legend_names = [command['x_fieldname'].capitalize() for command in commands]
 ax.legend(legend_names)
-ax.set_xlabel(commands[0]['y_fieldname'].capitalize())
+# Replace underscores and dashes with spaces, and capitalize the first letter of each word
+x_label = commands[0]['y_fieldname'].replace('_', ' ').replace('-', ' ').title()
+# Set the x-axis label
+ax.set_xlabel(x_label)
 ax.set_ylabel('Count')
+
+plt.xticks(rotation=90)
+fig.subplots_adjust(bottom=0.2)
 
 # Save the plot to stdout
 plt.savefig(sys.stdout.buffer, format='png')

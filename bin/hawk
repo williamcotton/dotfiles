@@ -1,0 +1,12 @@
+/./ {  # ignore blank lines
+  f = "hawk.temp"
+  hist[++n] = "prev = " $0
+  print "BEGIN {" >f
+  for (i = 1; i <= n; i++)
+    print hist[i] >f
+  if ($0 !~ "=")
+    print "print \"   \" prev" >f
+    print "}" >f
+    close(f)
+    system("awk -f " f)
+}

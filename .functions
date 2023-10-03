@@ -1,3 +1,7 @@
+function hawk() {
+  awk -f hawk
+}
+
 # Create a new directory and enter it
 function md() {
 	mkdir -p "$@" && cd "$@"
@@ -330,6 +334,29 @@ function prependhtml() {
     done
     local html="$(cat -)"
     echo "$prefix$html"
+}
+
+function csvtosql() {
+  sqlite3 -header -csv ':memory:' ".import /dev/stdin csv" "$@" 2>/dev/null
+}
+
+function csvtotsv() {
+  csvformat -T -
+}
+
+function tsvtocsv() {
+  awk 'BEGIN { FS="\t"; OFS="," } {
+    rebuilt=0
+    for(i=1; i<=NF; ++i) {
+      if ($i ~ /,/ && $i !~ /^".*"$/) { 
+        gsub("\"", "\"\"", $i)
+        $i = "\"" $i "\""
+        rebuilt=1 
+      }
+    }
+    if (!rebuilt) { $1=$1 }
+    print
+  }'
 }
 
 # Define the adeline function

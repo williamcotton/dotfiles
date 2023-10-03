@@ -6,9 +6,9 @@ _tabversion = '3.10'
 
 _lr_method = 'LALR'
 
-_lr_signature = 'BAR COLOR COMMA DRAW_STYLE FIELDNAME LBRACE LBRACKET LINE RBRACE RBRACKET STACKBAR WIDTHprogram : command\n               | command commandcommand : fields LBRACE display RBRACEfields : FIELDNAME COMMA FIELDNAME\n              | LBRACKET FIELDNAME COMMA FIELDNAME RBRACKET COMMA FIELDNAMEdisplay : LINE style\n               | BAR style\n               | STACKBAR stackbar_stylestyle : WIDTH DRAW_STYLE COLORstackbar_style : WIDTH LBRACKET DRAW_STYLE COLOR COMMA DRAW_STYLE COLOR RBRACKET'
+_lr_signature = "BAR COLOR DRAW_STYLE FIELDNAME LINE STACKBAR WIDTHprogram : command\n               | command commandcommand : fields '{' display '}' fields : FIELDNAME ',' FIELDNAME\n              | '[' FIELDNAME ',' FIELDNAME ']' ',' FIELDNAMEdisplay : LINE style\n               | BAR style\n               | STACKBAR stackbar_stylestyle : WIDTH DRAW_STYLE COLORstackbar_style : WIDTH '[' DRAW_STYLE COLOR ',' DRAW_STYLE COLOR ']' "
     
-_lr_action_items = {'FIELDNAME':([0,2,5,8,15,16,28,],[4,4,9,14,22,-3,30,]),'LBRACKET':([0,2,16,21,],[5,5,-3,24,]),'$end':([1,2,6,16,],[0,-1,-2,-3,]),'LBRACE':([3,14,30,],[7,-4,-5,]),'COMMA':([4,9,25,29,],[8,15,28,31,]),'LINE':([7,],[11,]),'BAR':([7,],[12,]),'STACKBAR':([7,],[13,]),'RBRACE':([10,17,19,20,26,34,],[16,-6,-7,-8,-9,-10,]),'WIDTH':([11,12,13,],[18,18,21,]),'DRAW_STYLE':([18,24,31,],[23,27,32,]),'RBRACKET':([22,33,],[25,34,]),'COLOR':([23,27,32,],[26,29,33,]),}
+_lr_action_items = {'FIELDNAME':([0,2,5,8,15,16,28,],[4,4,9,14,22,-3,30,]),'[':([0,2,16,21,],[5,5,-3,24,]),'$end':([1,2,6,16,],[0,-1,-2,-3,]),'{':([3,14,30,],[7,-4,-5,]),',':([4,9,25,29,],[8,15,28,31,]),'LINE':([7,],[11,]),'BAR':([7,],[12,]),'STACKBAR':([7,],[13,]),'}':([10,17,19,20,26,34,],[16,-6,-7,-8,-9,-10,]),'WIDTH':([11,12,13,],[18,18,21,]),'DRAW_STYLE':([18,24,31,],[23,27,32,]),']':([22,33,],[25,34,]),'COLOR':([23,27,32,],[26,29,33,]),}
 
 _lr_action = {}
 for _k, _v in _lr_action_items.items():
@@ -27,14 +27,14 @@ for _k, _v in _lr_goto_items.items():
 del _lr_goto_items
 _lr_productions = [
   ("S' -> program","S'",1,None,None,None),
-  ('program -> command','program',1,'p_program','plt',60),
-  ('program -> command command','program',2,'p_program','plt',61),
-  ('command -> fields LBRACE display RBRACE','command',4,'p_command','plt',65),
-  ('fields -> FIELDNAME COMMA FIELDNAME','fields',3,'p_fields','plt',70),
-  ('fields -> LBRACKET FIELDNAME COMMA FIELDNAME RBRACKET COMMA FIELDNAME','fields',7,'p_fields','plt',71),
-  ('display -> LINE style','display',2,'p_display','plt',76),
-  ('display -> BAR style','display',2,'p_display','plt',77),
-  ('display -> STACKBAR stackbar_style','display',2,'p_display','plt',78),
-  ('style -> WIDTH DRAW_STYLE COLOR','style',3,'p_style','plt',83),
-  ('stackbar_style -> WIDTH LBRACKET DRAW_STYLE COLOR COMMA DRAW_STYLE COLOR RBRACKET','stackbar_style',8,'p_stackbar_style','plt',88),
+  ('program -> command','program',1,'p_program','plt',80),
+  ('program -> command command','program',2,'p_program','plt',81),
+  ('command -> fields { display }','command',4,'p_command','plt',85),
+  ('fields -> FIELDNAME , FIELDNAME','fields',3,'p_fields','plt',90),
+  ('fields -> [ FIELDNAME , FIELDNAME ] , FIELDNAME','fields',7,'p_fields','plt',91),
+  ('display -> LINE style','display',2,'p_display','plt',96),
+  ('display -> BAR style','display',2,'p_display','plt',97),
+  ('display -> STACKBAR stackbar_style','display',2,'p_display','plt',98),
+  ('style -> WIDTH DRAW_STYLE COLOR','style',3,'p_style','plt',103),
+  ('stackbar_style -> WIDTH [ DRAW_STYLE COLOR , DRAW_STYLE COLOR ]','stackbar_style',8,'p_stackbar_style','plt',108),
 ]

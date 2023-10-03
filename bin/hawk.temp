@@ -1,0 +1,6 @@
+BEGIN {
+prev = g = 12
+prev = isd= 23
+prev = g + 4 * isd
+print "   " prev
+}
