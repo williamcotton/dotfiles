@@ -1,0 +1,94 @@
+#!/usr/bin/env python3
+
+import sys
+import csv
+import mysql.connector
+import unicodedata2
+import itertools
+
+notLabeledCount = 0
+
+def scrub_header_value(header):
+  # manuallyFilteredHeader = header.replace(" ", "_").replace("(", "").replace(")", "").replace("-", "_").replace("?", "").replace(".", "").replace("#", "")
+  printable = {'Lu', 'Ll', 'Nd'}
+  return ''.join(c for c in header if unicodedata2.category(c) in printable)
+
+def format_header(header):
+  if header == "":
+    global notLabeledCount
+    notLabeledCount += 1
+    return f"not_labeled_{notLabeledCount}"
+  scrubbedHeader = scrub_header_value(header)
+  return scrubbedHeader
+
+def format_headers(headers):
+  headers = list(filter(lambda x: x != '', headers))
+  headers = list(filter(lambda h: not h.startswith("not_labeled"), headers))
+  headers = list(map(lambda h: format_header(h), headers))
+  print(headers)
+  return headers
+
+def read_csv_in_chunks(file_object, chunk_size=1024):
+  """Lazy function (generator) to read a file piece by piece.
+  Default chunk size: 1k."""
+  while True:
+    data = file_object.read(chunk_size)
+    if not data:
+      break
+    yield data
+
+sourceFileName = sys.argv[1]
+dbTableName = sys.argv[2]
+delimiter = ','
+
+host = '127.0.0.1'
+database = 'post_v_course'
+port = '3306'
+
+dbConn = mysql.connector.connect(
+  host=host,
+  # user=user,
+  # password=password,
+  database=database,
+  port=port
+)
+
+with open(sourceFileName, "rt", encoding="ISO-8859-1") as f:
+  reader = csv.reader((line.replace('\0','') for line in f), delimiter=delimiter)
+  headers = next(reader)
+  formattedHeaders = format_headers(headers)
+  cursor = dbConn.cursor()
+  create_table = f"CREATE TABLE IF NOT EXISTS {dbTableName} (row_id INT NOT NULL PRIMARY KEY, "
+  noHeaderLabelCount = 0
+  for column in formattedHeaders:
+    if column == "":
+      noHeaderLabelCount += 1
+      column = f"not_labeled_{noHeaderLabelCount}"
+    create_table += f"{column} TEXT, "
+  create_table = create_table[:-2] + ")"
+  cursor.execute(create_table)
+  formattedHeaders.insert(0, "row_id")
+  columns = ", ".join(formattedHeaders)
+  index = 1
+  values = []
+  for i, row in enumerate(reader):
+    if any(x.strip() for x in row):
+      quoteFormattedValues = map(lambda v: v.replace('"', '\\"').replace("'", "\\'"), row)
+      formattedValues = list(map(lambda v: f'"{v}"', quoteFormattedValues))
+      formattedValues.insert(0, str(index))
+      value = "(" + ", ".join(formattedValues) + ")"
+      value = value[:len(formattedHeaders)]
+      values.append(value)
+      index += 1
+    if (i + 1) % 10000 == 0:
+      sql = f"INSERT INTO {dbTableName} ({columns}) VALUES {','.join(values)}"
+      cursor.execute(sql)
+      dbConn.commit()
+      values = []
+  if len(values) > 0:
+    sql = f"INSERT INTO {dbTableName} ({columns}) VALUES {','.join(values)}"
+    cursor.execute(sql)
+    dbConn.commit()
+
+cursor.close()
+dbConn.close()

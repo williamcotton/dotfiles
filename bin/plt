@@ -10,6 +10,9 @@
 # $ cat data.csv | plt "[insertions, deletions], date { stackbar 20px [solid orange, solid blue]}" > chart.png
 #
 # $ plt "insertions, date { line 5px solid red } deletions, date { bar 20px solid #DDFF21 }" < data.csv > combined.png
+#
+# $ plt "insertions, date { line 5px solid red } deletions, date { bar 20px solid #DDFF21 }" --py > combined.py
+# $ cat data.csv | python3 combined.py > combined.png
 # ```
 #
 # ## grammar
@@ -27,12 +30,23 @@
 # COLOR = "red" | "green" | "blue" | "orange" | "#" [0-9a-fA-F]{6};
 # ```
 
-
+import os
+import tempfile
+import subprocess
 import sys
-import csv
-import matplotlib.pyplot as plt
 from ply import lex, yacc
-import datetime
+import argparse
+
+# Define the parser for the plt language
+plt_parser = argparse.ArgumentParser(add_help=False)
+plt_parser.add_argument('plt', nargs='?', type=str, help='The plt language string')
+
+# Parse the command line arguments
+parser = argparse.ArgumentParser(parents=[plt_parser])
+parser.add_argument('--py', action='store_true', help='Print the generated Python code and exit')
+parser.add_argument('args', nargs='*', type=str, help='Optional arguments')
+args = parser.parse_args()
+
 
 # Define the reserved words
 reserved = {
@@ -64,7 +78,7 @@ def t_FIELDNAME(t):
     t.type = reserved.get(t.value, 'FIELDNAME') # Check for reserved words
     return t
 
-t_ignore  = ' \t' # ignore whitespace
+t_ignore  = ' \t\n' # ignore whitespace and newlines
 
 def t_error(t):
     print("Unknown token:", t.value)
@@ -72,7 +86,7 @@ def t_error(t):
 
 literals = ['[', ']', '{', '}', ',']
 
-# Commands for matplotlib
+# Matplotlib commands
 commands = []
 command = {}
 
@@ -116,11 +130,33 @@ def p_error(p):
 lexer = lex.lex()
 parser = yacc.yacc()
 
-# Parse the input arguments
-parser.parse(sys.argv[1])
+# Check if the plt language string is provided
+if args.plt:
+    # Parse the plt language string using the lexer and parser
+    parser = yacc.yacc()
+    # A single pass compiler builds the matplotlib commands as we parse the plt language string
+    parser.parse(args.plt)
 
-# Read the CSV data from stdin
-reader = csv.DictReader(sys.stdin)
+# Compile the matplotlib commands into Python code
+output = """#!/usr/bin/env python3
+
+import csv
+import sys
+import io
+import matplotlib.pyplot as plt
+
+# Read CSV or TSV from STDIN
+input_file = io.StringIO(sys.stdin.read())
+first_line = input_file.readline()
+input_file.seek(0)
+
+if '\\t' in first_line:
+    # The input data is tab-delimited
+    reader = csv.DictReader(input_file, delimiter='\\t')
+else:
+    # The input data is comma-delimited
+    reader = csv.DictReader(input_file)
+
 data = {k: [] for k in reader.fieldnames}
 for row in reader:
     for k, v in row.items():
@@ -128,29 +164,48 @@ for row in reader:
 
 # Generate the plot
 fig, ax = plt.subplots(figsize=(8, 5))
-
+"""
 # Iterate over the commands array and create the respective plot types
 for command in commands:
-    x_value = [float(x) for x in data[command['x_fieldname']]]
-    y_value = data[command['y_fieldname']]
+    output += f"\n\n# {command['plot_style']} plot for [{command['x_fieldname']}, {command['y_fieldname']}]"
+    output += f"\n\nx_value = [float(x) for x in data['{command['x_fieldname']}']]"
+    output += f"\ny_value = data['{command['y_fieldname']}']"
     color = command['color']
     width = command['width']
     if command['plot_style'] == 'line':
-        ax.plot(y_value, x_value, color=color, linewidth=width)
+        output += f"\nax.plot(y_value, x_value, color='{color}', linewidth={width})"
     elif command['plot_style'] == 'bar':
-        ax.bar(y_value, x_value, color=color, width=width / 50, alpha=0.5)
+        output += f"\nax.bar(y_value, x_value, color='{color}', width={width / 50}, alpha=0.5)"
 
 # Update the legend names and labels
-legend_names = [command['x_fieldname'].capitalize() for command in commands]
+output += f"""\n
+legend_names = {[command['x_fieldname'].capitalize() for command in commands]}
 ax.legend(legend_names)
+
 # Replace underscores and dashes with spaces, and capitalize the first letter of each word
-x_label = commands[0]['y_fieldname'].replace('_', ' ').replace('-', ' ').title()
-# Set the x-axis label
+x_label = "{commands[0]['y_fieldname']}".replace('_', ' ').replace('-', ' ').title()
+
 ax.set_xlabel(x_label)
 ax.set_ylabel('Count')
 
 plt.xticks(rotation=90)
 fig.subplots_adjust(bottom=0.2)
 
-# Save the plot to stdout
-plt.savefig(sys.stdout.buffer, format='png')
+# Save the plot to stdout as a PNG image
+plt.savefig(sys.stdout.buffer, format='png')"""
+
+# Print the generated Python code and exit if the --py flag is used
+if args.py:
+    print(output)
+    sys.exit()
+
+# Save the plot to a temporary file
+with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+    f.write(output)
+    temp_file = f.name
+
+# Execute the temporary file using subprocess.run()
+subprocess.run(['python3', temp_file], stdin=sys.stdin, stdout=sys.stdout)
+
+# Delete the temporary file
+os.unlink(temp_file)
