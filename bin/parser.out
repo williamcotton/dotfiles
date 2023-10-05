@@ -9,24 +9,26 @@ Rule 3     command -> fields { display }
 Rule 4     fields -> FIELDNAME , FIELDNAME
 Rule 5     fields -> fields , FIELDNAME
 Rule 6     fields -> [ fields ] , FIELDNAME
-Rule 7     display -> PLOT style
-Rule 8     display -> BAR style
-Rule 9     display -> STACKBAR stackbar_style
-Rule 10    style -> WIDTH DRAW_STYLE COLOR
-Rule 11    stackbar_style -> WIDTH [ DRAW_STYLE COLOR , DRAW_STYLE COLOR ]
+Rule 7     display -> PLOT WIDTH style
+Rule 8     display -> BAR WIDTH style
+Rule 9     display -> BAR WIDTH [ stackbar_style ]
+Rule 10    display -> STACKBAR WIDTH [ stackbar_style ]
+Rule 11    style -> DRAW_STYLE COLOR
+Rule 12    stackbar_style -> DRAW_STYLE COLOR , DRAW_STYLE COLOR
+Rule 13    stackbar_style -> stackbar_style , DRAW_STYLE COLOR
 
 Terminals, with rules where they appear
 
-,                    : 4 5 6 11
-BAR                  : 8
-COLOR                : 10 11 11
-DRAW_STYLE           : 10 11 11
+,                    : 4 5 6 12 13
+BAR                  : 8 9
+COLOR                : 11 12 12 13
+DRAW_STYLE           : 11 12 12 13
 FIELDNAME            : 4 4 5 6
 PLOT                 : 7
-STACKBAR             : 9
-WIDTH                : 10 11
-[                    : 6 11
-]                    : 6 11
+STACKBAR             : 10
+WIDTH                : 7 8 9 10
+[                    : 6 9 10
+]                    : 6 9 10
 error                : 
 {                    : 3
 }                    : 3
@@ -37,7 +39,7 @@ command              : 1 2
 display              : 3
 fields               : 3 5 6
 program              : 2 0
-stackbar_style       : 9
+stackbar_style       : 9 10 13
 style                : 7 8
 
 Parsing method: LALR
@@ -123,9 +125,10 @@ state 6
 state 7
 
     (3) command -> fields { . display }
-    (7) display -> . PLOT style
-    (8) display -> . BAR style
-    (9) display -> . STACKBAR stackbar_style
+    (7) display -> . PLOT WIDTH style
+    (8) display -> . BAR WIDTH style
+    (9) display -> . BAR WIDTH [ stackbar_style ]
+    (10) display -> . STACKBAR WIDTH [ stackbar_style ]
 
     PLOT            shift and go to state 12
     BAR             shift and go to state 13
@@ -165,30 +168,25 @@ state 11
 
 state 12
 
-    (7) display -> PLOT . style
-    (10) style -> . WIDTH DRAW_STYLE COLOR
+    (7) display -> PLOT . WIDTH style
 
-    WIDTH           shift and go to state 20
+    WIDTH           shift and go to state 19
 
-    style                          shift and go to state 19
 
 state 13
 
-    (8) display -> BAR . style
-    (10) style -> . WIDTH DRAW_STYLE COLOR
+    (8) display -> BAR . WIDTH style
+    (9) display -> BAR . WIDTH [ stackbar_style ]
 
     WIDTH           shift and go to state 20
 
-    style                          shift and go to state 21
 
 state 14
 
-    (9) display -> STACKBAR . stackbar_style
-    (11) stackbar_style -> . WIDTH [ DRAW_STYLE COLOR , DRAW_STYLE COLOR ]
+    (10) display -> STACKBAR . WIDTH [ stackbar_style ]
 
-    WIDTH           shift and go to state 23
+    WIDTH           shift and go to state 21
 
-    stackbar_style                 shift and go to state 22
 
 state 15
 
@@ -212,7 +210,7 @@ state 17
 
     (6) fields -> [ fields ] . , FIELDNAME
 
-    ,               shift and go to state 24
+    ,               shift and go to state 22
 
 
 state 18
@@ -226,61 +224,80 @@ state 18
 
 state 19
 
-    (7) display -> PLOT style .
+    (7) display -> PLOT WIDTH . style
+    (11) style -> . DRAW_STYLE COLOR
 
-    }               reduce using rule 7 (display -> PLOT style .)
+    DRAW_STYLE      shift and go to state 24
 
+    style                          shift and go to state 23
 
 state 20
 
-    (10) style -> WIDTH . DRAW_STYLE COLOR
+    (8) display -> BAR WIDTH . style
+    (9) display -> BAR WIDTH . [ stackbar_style ]
+    (11) style -> . DRAW_STYLE COLOR
 
-    DRAW_STYLE      shift and go to state 25
+    [               shift and go to state 26
+    DRAW_STYLE      shift and go to state 24
 
+    style                          shift and go to state 25
 
 state 21
 
-    (8) display -> BAR style .
+    (10) display -> STACKBAR WIDTH . [ stackbar_style ]
 
-    }               reduce using rule 8 (display -> BAR style .)
+    [               shift and go to state 27
 
 
 state 22
 
-    (9) display -> STACKBAR stackbar_style .
+    (6) fields -> [ fields ] , . FIELDNAME
 
-    }               reduce using rule 9 (display -> STACKBAR stackbar_style .)
+    FIELDNAME       shift and go to state 28
 
 
 state 23
 
-    (11) stackbar_style -> WIDTH . [ DRAW_STYLE COLOR , DRAW_STYLE COLOR ]
+    (7) display -> PLOT WIDTH style .
 
-    [               shift and go to state 26
+    }               reduce using rule 7 (display -> PLOT WIDTH style .)
 
 
 state 24
 
-    (6) fields -> [ fields ] , . FIELDNAME
+    (11) style -> DRAW_STYLE . COLOR
 
-    FIELDNAME       shift and go to state 27
+    COLOR           shift and go to state 29
 
 
 state 25
 
-    (10) style -> WIDTH DRAW_STYLE . COLOR
+    (8) display -> BAR WIDTH style .
 
-    COLOR           shift and go to state 28
+    }               reduce using rule 8 (display -> BAR WIDTH style .)
 
 
 state 26
 
-    (11) stackbar_style -> WIDTH [ . DRAW_STYLE COLOR , DRAW_STYLE COLOR ]
+    (9) display -> BAR WIDTH [ . stackbar_style ]
+    (12) stackbar_style -> . DRAW_STYLE COLOR , DRAW_STYLE COLOR
+    (13) stackbar_style -> . stackbar_style , DRAW_STYLE COLOR
 
-    DRAW_STYLE      shift and go to state 29
+    DRAW_STYLE      shift and go to state 31
 
+    stackbar_style                 shift and go to state 30
 
 state 27
+
+    (10) display -> STACKBAR WIDTH [ . stackbar_style ]
+    (12) stackbar_style -> . DRAW_STYLE COLOR , DRAW_STYLE COLOR
+    (13) stackbar_style -> . stackbar_style , DRAW_STYLE COLOR
+
+    DRAW_STYLE      shift and go to state 31
+
+    stackbar_style                 shift and go to state 32
+
+state 28
 
     (6) fields -> [ fields ] , FIELDNAME .
 
@@ -289,51 +306,99 @@ state 27
     ]               reduce using rule 6 (fields -> [ fields ] , FIELDNAME .)
 
 
-state 28
-
-    (10) style -> WIDTH DRAW_STYLE COLOR .
-
-    }               reduce using rule 10 (style -> WIDTH DRAW_STYLE COLOR .)
-
-
 state 29
 
-    (11) stackbar_style -> WIDTH [ DRAW_STYLE . COLOR , DRAW_STYLE COLOR ]
+    (11) style -> DRAW_STYLE COLOR .
 
-    COLOR           shift and go to state 30
+    }               reduce using rule 11 (style -> DRAW_STYLE COLOR .)
 
 
 state 30
 
-    (11) stackbar_style -> WIDTH [ DRAW_STYLE COLOR . , DRAW_STYLE COLOR ]
+    (9) display -> BAR WIDTH [ stackbar_style . ]
+    (13) stackbar_style -> stackbar_style . , DRAW_STYLE COLOR
 
-    ,               shift and go to state 31
+    ]               shift and go to state 33
+    ,               shift and go to state 34
 
 
 state 31
 
-    (11) stackbar_style -> WIDTH [ DRAW_STYLE COLOR , . DRAW_STYLE COLOR ]
+    (12) stackbar_style -> DRAW_STYLE . COLOR , DRAW_STYLE COLOR
 
-    DRAW_STYLE      shift and go to state 32
+    COLOR           shift and go to state 35
 
 
 state 32
 
-    (11) stackbar_style -> WIDTH [ DRAW_STYLE COLOR , DRAW_STYLE . COLOR ]
+    (10) display -> STACKBAR WIDTH [ stackbar_style . ]
+    (13) stackbar_style -> stackbar_style . , DRAW_STYLE COLOR
 
-    COLOR           shift and go to state 33
+    ]               shift and go to state 36
+    ,               shift and go to state 34
 
 
 state 33
 
-    (11) stackbar_style -> WIDTH [ DRAW_STYLE COLOR , DRAW_STYLE COLOR . ]
+    (9) display -> BAR WIDTH [ stackbar_style ] .
 
-    ]               shift and go to state 34
+    }               reduce using rule 9 (display -> BAR WIDTH [ stackbar_style ] .)
 
 
 state 34
 
-    (11) stackbar_style -> WIDTH [ DRAW_STYLE COLOR , DRAW_STYLE COLOR ] .
+    (13) stackbar_style -> stackbar_style , . DRAW_STYLE COLOR
 
-    }               reduce using rule 11 (stackbar_style -> WIDTH [ DRAW_STYLE COLOR , DRAW_STYLE COLOR ] .)
+    DRAW_STYLE      shift and go to state 37
+
+
+state 35
+
+    (12) stackbar_style -> DRAW_STYLE COLOR . , DRAW_STYLE COLOR
+
+    ,               shift and go to state 38
+
+
+state 36
+
+    (10) display -> STACKBAR WIDTH [ stackbar_style ] .
+
+    }               reduce using rule 10 (display -> STACKBAR WIDTH [ stackbar_style ] .)
+
+
+state 37
+
+    (13) stackbar_style -> stackbar_style , DRAW_STYLE . COLOR
+
+    COLOR           shift and go to state 39
+
+
+state 38
+
+    (12) stackbar_style -> DRAW_STYLE COLOR , . DRAW_STYLE COLOR
+
+    DRAW_STYLE      shift and go to state 40
+
+
+state 39
+
+    (13) stackbar_style -> stackbar_style , DRAW_STYLE COLOR .
+
+    ]               reduce using rule 13 (stackbar_style -> stackbar_style , DRAW_STYLE COLOR .)
+    ,               reduce using rule 13 (stackbar_style -> stackbar_style , DRAW_STYLE COLOR .)
+
+
+state 40
+
+    (12) stackbar_style -> DRAW_STYLE COLOR , DRAW_STYLE . COLOR
+
+    COLOR           shift and go to state 41
+
+
+state 41
+
+    (12) stackbar_style -> DRAW_STYLE COLOR , DRAW_STYLE COLOR .
+
+    ]               reduce using rule 12 (stackbar_style -> DRAW_STYLE COLOR , DRAW_STYLE COLOR .)
+    ,               reduce using rule 12 (stackbar_style -> DRAW_STYLE COLOR , DRAW_STYLE COLOR .)
 

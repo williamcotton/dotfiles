@@ -120,19 +120,31 @@ def p_fields(p):
     pass
 
 def p_display(p):
-    '''display : PLOT style
-               | BAR style
-               | STACKBAR stackbar_style'''
-    matplotlib_command.update({'plot_style': p[1]})
+    '''display : PLOT WIDTH style
+               | BAR WIDTH style
+               | BAR WIDTH '[' stackbar_style ']'
+               | STACKBAR WIDTH '[' stackbar_style ']' '''
+    matplotlib_command.update({'plot_style': p[1], 'width': int(p[2][:-2])})
     pass
 
 def p_style(p):
-    '''style : WIDTH DRAW_STYLE COLOR'''
-    matplotlib_command.update({'width': int(p[1][:-2]), 'draw_style': p[2], 'color': p[3]})
+    '''style : DRAW_STYLE COLOR'''
+    matplotlib_command.update({'draw_style': p[1], 'color': p[2]})
     pass
 
 def p_stackbar_style(p):
-    '''stackbar_style : WIDTH '[' DRAW_STYLE COLOR ',' DRAW_STYLE COLOR ']' '''
+    '''stackbar_style : DRAW_STYLE COLOR ',' DRAW_STYLE COLOR
+                      | stackbar_style ',' DRAW_STYLE COLOR'''
+    if (len(p) == 5):
+        p[1] += [{'draw_style': p[3], 'color': p[4]}]
+        matplotlib_command.update({'styles': p[1]})
+    if (len(p) == 6):
+        matplotlib_command.update({'styles': [{'draw_style': p[1], 'color': p[2]}, {'draw_style':p[4], 'color':p[5]}]})    
+    if not isinstance(p[1], list):
+        p[0] = [{'draw_style': p[1], 'color': p[2]}, {'draw_style':p[4], 'color':p[5]}]
+    else:
+        p[0] = p[1] + [{'draw_style': p[3], 'color': p[4]}]
+
     pass
 
 def p_error(p):
@@ -217,17 +229,28 @@ fig, ax = plt.subplots(figsize=(8, 5))
 
 # Iterate over the matplotlib commands array and create the respective plot types
 for command in matplotlib_commands:
-    output += f"\n\n# {command['plot_style']}: [{command['x_fieldname']}, {command['y_fieldname']}]"
-    output += f"\n\nx_{command['x_fieldname']}_value = [float(x) for x in data['{command['x_fieldname']}']]"
-    output += f"\ny_value = data['{command['y_fieldname']}']"
-    if command['plot_style'] == 'plot':
-        output += f"\nax.plot(y_value, x_{command['x_fieldname']}_value, color='{command['color']}', linewidth={command['width']})"
-    elif command['plot_style'] == 'bar':
-        output += f"\nax.bar(y_value, x_{command['x_fieldname']}_value, color='{command['color']}', width={command['width'] / 50}, alpha=0.5)"
+    output += f"\ny_value = data['{command['y_fieldname']}']"    
+    if 'x_fieldname' in command:
+        output += f"\n\n# {command['plot_style']}: [{command['x_fieldname']}, {command['y_fieldname']}]"
+        output += f"\n\nx_{command['x_fieldname']}_value = [float(x) for x in data['{command['x_fieldname']}']]"
+        if command['plot_style'] == 'plot':
+            output += f"\nax.plot(y_value, x_{command['x_fieldname']}_value, color='{command['color']}', linewidth={command['width']})"
+        elif command['plot_style'] == 'bar':
+            output += f"\nax.bar(y_value, x_{command['x_fieldname']}_value, color='{command['color']}', width={command['width'] / 50}, alpha=0.5)"
+    else:
+        output += f"\n\n# {command['plot_style']}: [{command['x_fieldnames']}, {command['y_fieldname']}]"
+        # output += "\n\nx_values = ["
+        for field in command['x_fieldnames']:
+            output += f"[float(x) for x in data['{field}']] + "
+ 
+if 'x_fieldname' in command:
+    output += f"\nlegend_names = {[command['x_fieldname'].replace('_', ' ').replace('-', ' ').title() for command in matplotlib_commands]}"
+else:
+    output += f"\nlegend_names = {[field.replace('_', ' ').replace('-', ' ').title() for field in command['x_fieldnames']]}"
 
 output += f"""\n
 # Update the legend names and labels
-legend_names = {[command['x_fieldname'].replace('_', ' ').replace('-', ' ').title() for command in matplotlib_commands]}
+
 ax.legend(legend_names)
 
 # Replace underscores and dashes with spaces, and capitalize the first letter of each word
