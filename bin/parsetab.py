@@ -6,9 +6,9 @@ _tabversion = '3.10'
 
 _lr_method = 'LALR'
 
-_lr_signature = "BAR COLOR DRAW_STYLE FIELDNAME LINE STACKBAR WIDTHprogram : command\n               | command commandcommand : fields '{' display '}' fields : FIELDNAME ',' FIELDNAME\n              | '[' FIELDNAME ',' FIELDNAME ']' ',' FIELDNAMEdisplay : LINE style\n               | BAR style\n               | STACKBAR stackbar_stylestyle : WIDTH DRAW_STYLE COLORstackbar_style : WIDTH '[' DRAW_STYLE COLOR ',' DRAW_STYLE COLOR ']' "
+_lr_signature = "BAR COLOR DRAW_STYLE FIELDNAME PLOT STACKBAR WIDTHprogram : command\n               | program commandcommand : fields '{' display '}' fields : FIELDNAME ',' FIELDNAME\n              | fields ',' FIELDNAME\n              | '[' fields ']' ',' FIELDNAMEdisplay : PLOT style\n               | BAR style\n               | STACKBAR stackbar_stylestyle : WIDTH DRAW_STYLE COLORstackbar_style : WIDTH '[' DRAW_STYLE COLOR ',' DRAW_STYLE COLOR ']' "
     
-_lr_action_items = {'FIELDNAME':([0,2,5,8,15,16,28,],[4,4,9,14,22,-3,30,]),'[':([0,2,16,21,],[5,5,-3,24,]),'$end':([1,2,6,16,],[0,-1,-2,-3,]),'{':([3,14,30,],[7,-4,-5,]),',':([4,9,25,29,],[8,15,28,31,]),'LINE':([7,],[11,]),'BAR':([7,],[12,]),'STACKBAR':([7,],[13,]),'}':([10,17,19,20,26,34,],[16,-6,-7,-8,-9,-10,]),'WIDTH':([11,12,13,],[18,18,21,]),'DRAW_STYLE':([18,24,31,],[23,27,32,]),']':([22,33,],[25,34,]),'COLOR':([23,27,32,],[26,29,33,]),}
+_lr_action_items = {'FIELDNAME':([0,1,2,5,6,8,9,18,24,],[4,4,-1,4,-2,15,16,-3,27,]),'[':([0,1,2,5,6,18,23,],[5,5,-1,5,-2,-3,26,]),'$end':([1,2,6,18,],[0,-1,-2,-3,]),'{':([3,15,16,27,],[7,-5,-4,-6,]),',':([3,4,10,15,16,17,27,30,],[8,9,8,-5,-4,24,-6,31,]),'PLOT':([7,],[12,]),'BAR':([7,],[13,]),'STACKBAR':([7,],[14,]),']':([10,15,16,27,33,],[17,-5,-4,-6,34,]),'}':([11,19,21,22,28,34,],[18,-7,-8,-9,-10,-11,]),'WIDTH':([12,13,14,],[20,20,23,]),'DRAW_STYLE':([20,26,31,],[25,29,32,]),'COLOR':([25,29,32,],[28,30,33,]),}
 
 _lr_action = {}
 for _k, _v in _lr_action_items.items():
@@ -17,7 +17,7 @@ for _k, _v in _lr_action_items.items():
       _lr_action[_x][_k] = _y
 del _lr_action_items
 
-_lr_goto_items = {'program':([0,],[1,]),'command':([0,2,],[2,6,]),'fields':([0,2,],[3,3,]),'display':([7,],[10,]),'style':([11,12,],[17,19,]),'stackbar_style':([13,],[20,]),}
+_lr_goto_items = {'program':([0,],[1,]),'command':([0,1,],[2,6,]),'fields':([0,1,5,],[3,3,10,]),'display':([7,],[11,]),'style':([12,13,],[19,21,]),'stackbar_style':([14,],[22,]),}
 
 _lr_goto = {}
 for _k, _v in _lr_goto_items.items():
@@ -27,14 +27,15 @@ for _k, _v in _lr_goto_items.items():
 del _lr_goto_items
 _lr_productions = [
   ("S' -> program","S'",1,None,None,None),
-  ('program -> command','program',1,'p_program','plt',80),
-  ('program -> command command','program',2,'p_program','plt',81),
-  ('command -> fields { display }','command',4,'p_command','plt',85),
-  ('fields -> FIELDNAME , FIELDNAME','fields',3,'p_fields','plt',90),
-  ('fields -> [ FIELDNAME , FIELDNAME ] , FIELDNAME','fields',7,'p_fields','plt',91),
-  ('display -> LINE style','display',2,'p_display','plt',96),
-  ('display -> BAR style','display',2,'p_display','plt',97),
-  ('display -> STACKBAR stackbar_style','display',2,'p_display','plt',98),
-  ('style -> WIDTH DRAW_STYLE COLOR','style',3,'p_style','plt',103),
-  ('stackbar_style -> WIDTH [ DRAW_STYLE COLOR , DRAW_STYLE COLOR ]','stackbar_style',8,'p_stackbar_style','plt',108),
+  ('program -> command','program',1,'p_program','plt',93),
+  ('program -> program command','program',2,'p_program','plt',94),
+  ('command -> fields { display }','command',4,'p_command','plt',98),
+  ('fields -> FIELDNAME , FIELDNAME','fields',3,'p_fields','plt',103),
+  ('fields -> fields , FIELDNAME','fields',3,'p_fields','plt',104),
+  ('fields -> [ fields ] , FIELDNAME','fields',5,'p_fields','plt',105),
+  ('display -> PLOT style','display',2,'p_display','plt',118),
+  ('display -> BAR style','display',2,'p_display','plt',119),
+  ('display -> STACKBAR stackbar_style','display',2,'p_display','plt',120),
+  ('style -> WIDTH DRAW_STYLE COLOR','style',3,'p_style','plt',125),
+  ('stackbar_style -> WIDTH [ DRAW_STYLE COLOR , DRAW_STYLE COLOR ]','stackbar_style',8,'p_stackbar_style','plt',130),
 ]

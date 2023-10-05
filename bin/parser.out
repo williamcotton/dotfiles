@@ -4,40 +4,41 @@ Grammar
 
 Rule 0     S' -> program
 Rule 1     program -> command
-Rule 2     program -> command command
+Rule 2     program -> program command
 Rule 3     command -> fields { display }
 Rule 4     fields -> FIELDNAME , FIELDNAME
-Rule 5     fields -> [ FIELDNAME , FIELDNAME ] , FIELDNAME
-Rule 6     display -> LINE style
-Rule 7     display -> BAR style
-Rule 8     display -> STACKBAR stackbar_style
-Rule 9     style -> WIDTH DRAW_STYLE COLOR
-Rule 10    stackbar_style -> WIDTH [ DRAW_STYLE COLOR , DRAW_STYLE COLOR ]
+Rule 5     fields -> fields , FIELDNAME
+Rule 6     fields -> [ fields ] , FIELDNAME
+Rule 7     display -> PLOT style
+Rule 8     display -> BAR style
+Rule 9     display -> STACKBAR stackbar_style
+Rule 10    style -> WIDTH DRAW_STYLE COLOR
+Rule 11    stackbar_style -> WIDTH [ DRAW_STYLE COLOR , DRAW_STYLE COLOR ]
 
 Terminals, with rules where they appear
 
-,                    : 4 5 5 10
-BAR                  : 7
-COLOR                : 9 10 10
-DRAW_STYLE           : 9 10 10
-FIELDNAME            : 4 4 5 5 5
-LINE                 : 6
-STACKBAR             : 8
-WIDTH                : 9 10
-[                    : 5 10
-]                    : 5 10
+,                    : 4 5 6 11
+BAR                  : 8
+COLOR                : 10 11 11
+DRAW_STYLE           : 10 11 11
+FIELDNAME            : 4 4 5 6
+PLOT                 : 7
+STACKBAR             : 9
+WIDTH                : 10 11
+[                    : 6 11
+]                    : 6 11
 error                : 
 {                    : 3
 }                    : 3
 
 Nonterminals, with rules where they appear
 
-command              : 1 2 2
+command              : 1 2
 display              : 3
-fields               : 3
-program              : 0
-stackbar_style       : 8
-style                : 6 7
+fields               : 3 5 6
+program              : 2 0
+stackbar_style       : 9
+style                : 7 8
 
 Parsing method: LALR
 
@@ -45,10 +46,11 @@ state 0
 
     (0) S' -> . program
     (1) program -> . command
-    (2) program -> . command command
+    (2) program -> . program command
     (3) command -> . fields { display }
     (4) fields -> . FIELDNAME , FIELDNAME
-    (5) fields -> . [ FIELDNAME , FIELDNAME ] , FIELDNAME
+    (5) fields -> . fields , FIELDNAME
+    (6) fields -> . [ fields ] , FIELDNAME
 
     FIELDNAME       shift and go to state 4
     [               shift and go to state 5
@@ -60,128 +62,160 @@ state 0
 state 1
 
     (0) S' -> program .
-
-
-
-state 2
-
-    (1) program -> command .
-    (2) program -> command . command
+    (2) program -> program . command
     (3) command -> . fields { display }
     (4) fields -> . FIELDNAME , FIELDNAME
-    (5) fields -> . [ FIELDNAME , FIELDNAME ] , FIELDNAME
+    (5) fields -> . fields , FIELDNAME
+    (6) fields -> . [ fields ] , FIELDNAME
 
-    $end            reduce using rule 1 (program -> command .)
     FIELDNAME       shift and go to state 4
     [               shift and go to state 5
 
     command                        shift and go to state 6
     fields                         shift and go to state 3
 
+state 2
+
+    (1) program -> command .
+
+    FIELDNAME       reduce using rule 1 (program -> command .)
+    [               reduce using rule 1 (program -> command .)
+    $end            reduce using rule 1 (program -> command .)
+
+
 state 3
 
     (3) command -> fields . { display }
+    (5) fields -> fields . , FIELDNAME
 
     {               shift and go to state 7
+    ,               shift and go to state 8
 
 
 state 4
 
     (4) fields -> FIELDNAME . , FIELDNAME
 
-    ,               shift and go to state 8
+    ,               shift and go to state 9
 
 
 state 5
 
-    (5) fields -> [ . FIELDNAME , FIELDNAME ] , FIELDNAME
+    (6) fields -> [ . fields ] , FIELDNAME
+    (4) fields -> . FIELDNAME , FIELDNAME
+    (5) fields -> . fields , FIELDNAME
+    (6) fields -> . [ fields ] , FIELDNAME
 
-    FIELDNAME       shift and go to state 9
+    FIELDNAME       shift and go to state 4
+    [               shift and go to state 5
 
+    fields                         shift and go to state 10
 
 state 6
 
-    (2) program -> command command .
+    (2) program -> program command .
 
-    $end            reduce using rule 2 (program -> command command .)
+    FIELDNAME       reduce using rule 2 (program -> program command .)
+    [               reduce using rule 2 (program -> program command .)
+    $end            reduce using rule 2 (program -> program command .)
 
 
 state 7
 
     (3) command -> fields { . display }
-    (6) display -> . LINE style
-    (7) display -> . BAR style
-    (8) display -> . STACKBAR stackbar_style
+    (7) display -> . PLOT style
+    (8) display -> . BAR style
+    (9) display -> . STACKBAR stackbar_style
 
-    LINE            shift and go to state 11
-    BAR             shift and go to state 12
-    STACKBAR        shift and go to state 13
+    PLOT            shift and go to state 12
+    BAR             shift and go to state 13
+    STACKBAR        shift and go to state 14
 
-    display                        shift and go to state 10
+    display                        shift and go to state 11
 
 state 8
 
-    (4) fields -> FIELDNAME , . FIELDNAME
+    (5) fields -> fields , . FIELDNAME
 
-    FIELDNAME       shift and go to state 14
+    FIELDNAME       shift and go to state 15
 
 
 state 9
 
-    (5) fields -> [ FIELDNAME . , FIELDNAME ] , FIELDNAME
+    (4) fields -> FIELDNAME , . FIELDNAME
 
-    ,               shift and go to state 15
+    FIELDNAME       shift and go to state 16
 
 
 state 10
 
-    (3) command -> fields { display . }
+    (6) fields -> [ fields . ] , FIELDNAME
+    (5) fields -> fields . , FIELDNAME
 
-    }               shift and go to state 16
+    ]               shift and go to state 17
+    ,               shift and go to state 8
 
 
 state 11
 
-    (6) display -> LINE . style
-    (9) style -> . WIDTH DRAW_STYLE COLOR
+    (3) command -> fields { display . }
 
-    WIDTH           shift and go to state 18
+    }               shift and go to state 18
 
-    style                          shift and go to state 17
 
 state 12
 
-    (7) display -> BAR . style
-    (9) style -> . WIDTH DRAW_STYLE COLOR
+    (7) display -> PLOT . style
+    (10) style -> . WIDTH DRAW_STYLE COLOR
 
-    WIDTH           shift and go to state 18
+    WIDTH           shift and go to state 20
 
     style                          shift and go to state 19
 
 state 13
 
-    (8) display -> STACKBAR . stackbar_style
-    (10) stackbar_style -> . WIDTH [ DRAW_STYLE COLOR , DRAW_STYLE COLOR ]
+    (8) display -> BAR . style
+    (10) style -> . WIDTH DRAW_STYLE COLOR
 
-    WIDTH           shift and go to state 21
+    WIDTH           shift and go to state 20
 
-    stackbar_style                 shift and go to state 20
+    style                          shift and go to state 21
 
 state 14
+
+    (9) display -> STACKBAR . stackbar_style
+    (11) stackbar_style -> . WIDTH [ DRAW_STYLE COLOR , DRAW_STYLE COLOR ]
+
+    WIDTH           shift and go to state 23
+
+    stackbar_style                 shift and go to state 22
+
+state 15
+
+    (5) fields -> fields , FIELDNAME .
+
+    {               reduce using rule 5 (fields -> fields , FIELDNAME .)
+    ,               reduce using rule 5 (fields -> fields , FIELDNAME .)
+    ]               reduce using rule 5 (fields -> fields , FIELDNAME .)
+
+
+state 16
 
     (4) fields -> FIELDNAME , FIELDNAME .
 
     {               reduce using rule 4 (fields -> FIELDNAME , FIELDNAME .)
+    ,               reduce using rule 4 (fields -> FIELDNAME , FIELDNAME .)
+    ]               reduce using rule 4 (fields -> FIELDNAME , FIELDNAME .)
 
 
-state 15
+state 17
 
-    (5) fields -> [ FIELDNAME , . FIELDNAME ] , FIELDNAME
+    (6) fields -> [ fields ] . , FIELDNAME
 
-    FIELDNAME       shift and go to state 22
+    ,               shift and go to state 24
 
 
-state 16
+state 18
 
     (3) command -> fields { display } .
 
@@ -190,128 +224,116 @@ state 16
     $end            reduce using rule 3 (command -> fields { display } .)
 
 
-state 17
-
-    (6) display -> LINE style .
-
-    }               reduce using rule 6 (display -> LINE style .)
-
-
-state 18
-
-    (9) style -> WIDTH . DRAW_STYLE COLOR
-
-    DRAW_STYLE      shift and go to state 23
-
-
 state 19
 
-    (7) display -> BAR style .
+    (7) display -> PLOT style .
 
-    }               reduce using rule 7 (display -> BAR style .)
+    }               reduce using rule 7 (display -> PLOT style .)
 
 
 state 20
 
-    (8) display -> STACKBAR stackbar_style .
+    (10) style -> WIDTH . DRAW_STYLE COLOR
 
-    }               reduce using rule 8 (display -> STACKBAR stackbar_style .)
+    DRAW_STYLE      shift and go to state 25
 
 
 state 21
 
-    (10) stackbar_style -> WIDTH . [ DRAW_STYLE COLOR , DRAW_STYLE COLOR ]
+    (8) display -> BAR style .
 
-    [               shift and go to state 24
+    }               reduce using rule 8 (display -> BAR style .)
 
 
 state 22
 
-    (5) fields -> [ FIELDNAME , FIELDNAME . ] , FIELDNAME
+    (9) display -> STACKBAR stackbar_style .
 
-    ]               shift and go to state 25
+    }               reduce using rule 9 (display -> STACKBAR stackbar_style .)
 
 
 state 23
 
-    (9) style -> WIDTH DRAW_STYLE . COLOR
+    (11) stackbar_style -> WIDTH . [ DRAW_STYLE COLOR , DRAW_STYLE COLOR ]
 
-    COLOR           shift and go to state 26
+    [               shift and go to state 26
 
 
 state 24
 
-    (10) stackbar_style -> WIDTH [ . DRAW_STYLE COLOR , DRAW_STYLE COLOR ]
+    (6) fields -> [ fields ] , . FIELDNAME
 
-    DRAW_STYLE      shift and go to state 27
+    FIELDNAME       shift and go to state 27
 
 
 state 25
 
-    (5) fields -> [ FIELDNAME , FIELDNAME ] . , FIELDNAME
+    (10) style -> WIDTH DRAW_STYLE . COLOR
 
-    ,               shift and go to state 28
+    COLOR           shift and go to state 28
 
 
 state 26
 
-    (9) style -> WIDTH DRAW_STYLE COLOR .
+    (11) stackbar_style -> WIDTH [ . DRAW_STYLE COLOR , DRAW_STYLE COLOR ]
 
-    }               reduce using rule 9 (style -> WIDTH DRAW_STYLE COLOR .)
+    DRAW_STYLE      shift and go to state 29
 
 
 state 27
 
-    (10) stackbar_style -> WIDTH [ DRAW_STYLE . COLOR , DRAW_STYLE COLOR ]
+    (6) fields -> [ fields ] , FIELDNAME .
 
-    COLOR           shift and go to state 29
+    {               reduce using rule 6 (fields -> [ fields ] , FIELDNAME .)
+    ,               reduce using rule 6 (fields -> [ fields ] , FIELDNAME .)
+    ]               reduce using rule 6 (fields -> [ fields ] , FIELDNAME .)
 
 
 state 28
 
-    (5) fields -> [ FIELDNAME , FIELDNAME ] , . FIELDNAME
+    (10) style -> WIDTH DRAW_STYLE COLOR .
 
-    FIELDNAME       shift and go to state 30
+    }               reduce using rule 10 (style -> WIDTH DRAW_STYLE COLOR .)
 
 
 state 29
 
-    (10) stackbar_style -> WIDTH [ DRAW_STYLE COLOR . , DRAW_STYLE COLOR ]
+    (11) stackbar_style -> WIDTH [ DRAW_STYLE . COLOR , DRAW_STYLE COLOR ]
 
-    ,               shift and go to state 31
+    COLOR           shift and go to state 30
 
 
 state 30
 
-    (5) fields -> [ FIELDNAME , FIELDNAME ] , FIELDNAME .
+    (11) stackbar_style -> WIDTH [ DRAW_STYLE COLOR . , DRAW_STYLE COLOR ]
 
-    {               reduce using rule 5 (fields -> [ FIELDNAME , FIELDNAME ] , FIELDNAME .)
+    ,               shift and go to state 31
 
 
 state 31
 
-    (10) stackbar_style -> WIDTH [ DRAW_STYLE COLOR , . DRAW_STYLE COLOR ]
+    (11) stackbar_style -> WIDTH [ DRAW_STYLE COLOR , . DRAW_STYLE COLOR ]
 
     DRAW_STYLE      shift and go to state 32
 
 
 state 32
 
-    (10) stackbar_style -> WIDTH [ DRAW_STYLE COLOR , DRAW_STYLE . COLOR ]
+    (11) stackbar_style -> WIDTH [ DRAW_STYLE COLOR , DRAW_STYLE . COLOR ]
 
     COLOR           shift and go to state 33
 
 
 state 33
 
-    (10) stackbar_style -> WIDTH [ DRAW_STYLE COLOR , DRAW_STYLE COLOR . ]
+    (11) stackbar_style -> WIDTH [ DRAW_STYLE COLOR , DRAW_STYLE COLOR . ]
 
     ]               shift and go to state 34
 
 
 state 34
 
-    (10) stackbar_style -> WIDTH [ DRAW_STYLE COLOR , DRAW_STYLE COLOR ] .
+    (11) stackbar_style -> WIDTH [ DRAW_STYLE COLOR , DRAW_STYLE COLOR ] .
 
-    }               reduce using rule 10 (stackbar_style -> WIDTH [ DRAW_STYLE COLOR , DRAW_STYLE COLOR ] .)
+    }               reduce using rule 11 (stackbar_style -> WIDTH [ DRAW_STYLE COLOR , DRAW_STYLE COLOR ] .)
 

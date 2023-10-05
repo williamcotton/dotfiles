@@ -1,33 +1,33 @@
 #!/usr/bin/env python3
 
-# ### plt - a command line tool for plotting data
+# # plt - a command line tool for plotting data
 #
 # ## example usage
 #
 # ```shell
-# $ cat data.csv | plt "insertions, date { line 1px solid red }" | imgcat --width=100
+# $ cat data.csv | plt "insertions, date { plot 1px solid red }" | imgcat --width=100
 # $ cat data.csv | plt "deletions, date { bar 20px solid green }" | imgcat --width=100
 # $ cat data.csv | plt "[insertions, deletions], date { stackbar 20px [solid orange, solid blue]}" > chart.png
 #
-# $ plt "insertions, date { line 5px solid red } deletions, date { bar 20px solid #DDFF21 }" < data.csv > combined.png
+# $ plt "insertions, date { plot 5px solid red } deletions, date { bar 20px solid #DDFF21 }" < data.csv > combined.png
 #
-# $ plt "insertions, date { line 5px solid red } deletions, date { bar 20px solid #DDFF21 }" --py > combined.py
+# $ plt "insertions, date { plot 5px solid red } deletions, date { bar 20px solid #D3F }" --py > combined.py
 # $ cat data.csv | python3 combined.py > combined.png
 # ```
 #
 # ## grammar
 #
 # ```ebnf
-# program = command | command command;
+# program = command*;
 # command = fields "{" display "}";
-# fields = FIELDNAME "," FIELDNAME | "[" FIELDNAME "," FIELDNAME "]" "," FIELDNAME;
-# display = "line" style | "bar" style | "stackbar" stackbar_style;
+# fields = FIELDNAME "," FIELDNAME* | "[" FIELDNAME "," FIELDNAME* "]" "," FIELDNAME;
+# display = "plot" style | "bar" style | "stackbar" stackbar_style;
 # style = WIDTH DRAW_STYLE COLOR;
 # stackbar_style = WIDTH "[" DRAW_STYLE COLOR "," DRAW_STYLE COLOR "]";
 # FIELDNAME = [a-zA-Z0-9_]+;
 # WIDTH = [0-9]+ "px";
 # DRAW_STYLE = "solid" | "dashed" | "dotted";
-# COLOR = "red" | "green" | "blue" | "orange" | "#" [0-9a-fA-F]{6};
+# COLOR = "red" | "green" | "blue" | "orange" | "black" | "#" [0-9a-fA-F]{6} | "#" [0-9a-fA-F]{3};
 # ```
 
 import os
@@ -36,31 +36,24 @@ import subprocess
 import sys
 from ply import lex, yacc
 import argparse
+import pprint
 
-# Define the parser for the plt language
-plt_parser = argparse.ArgumentParser(add_help=False)
-plt_parser.add_argument('plt', nargs='?', type=str, help='The plt language string')
+#
+# LANGUAGE DEFINITION
+#
 
-# Parse the command line arguments
-parser = argparse.ArgumentParser(parents=[plt_parser])
-parser.add_argument('--py', action='store_true', help='Print the generated Python code and exit')
-parser.add_argument('args', nargs='*', type=str, help='Optional arguments')
-args = parser.parse_args()
-
+color_names = ['red', 'green', 'blue', 'orange', 'black']
+draw_styles = ['solid', 'dashed', 'dotted']
 
 # Define the reserved words
 reserved = {
-    'line': 'LINE',
+    'plot': 'PLOT',
     'bar': 'BAR',
-    'stackbar': 'STACKBAR',
-    'solid': 'DRAW_STYLE',
-    'dashed': 'DRAW_STYLE',
-    'dotted': 'DRAW_STYLE',
-    'red': 'COLOR',
-    'green': 'COLOR',
-    'blue': 'COLOR',
-    'orange': 'COLOR',    
+    'stackbar': 'STACKBAR'
 }
+
+reserved.update({color: 'COLOR' for color in color_names})
+reserved.update({draw_style: 'DRAW_STYLE' for draw_style in draw_styles})
 
 # Define the lexer tokens
 tokens = (
@@ -69,9 +62,14 @@ tokens = (
 ) + tuple(set(reserved.values()))
 
 # Define the lexer rules
+draw_styles_regex = '|'.join(draw_styles)
+t_DRAW_STYLE = f'({draw_styles_regex})'
+
+color_names_regex = '|'.join(color_names)
+hex_color_regex = r'\#\w{6}|\#\w{3}'
+t_COLOR = f'({color_names_regex}|{hex_color_regex})'
+
 t_WIDTH = r'\d+px'
-t_COLOR = r'(red|green|blue|orange|\#\w{6})'
-t_DRAW_STYLE = r'(solid|dashed|dotted)'
 
 def t_FIELDNAME(t):
     r'[a-zA-Z_][a-zA-Z0-9_]*' # field names must start with a letter or underscore
@@ -87,36 +85,50 @@ def t_error(t):
 literals = ['[', ']', '{', '}', ',']
 
 # Matplotlib commands
-commands = []
-command = {}
+matplotlib_commands = []
+matplotlib_command = {}
 
 # Define the parser rules
 def p_program(p):
     '''program : command
-               | command command'''
+               | program command'''
     pass
 
 def p_command(p):
     '''command : fields '{' display '}' '''
-    commands.append(command.copy())
+    if 'x_fieldnames' in matplotlib_command:
+        del matplotlib_command['x_fieldname']
+    matplotlib_commands.append(matplotlib_command.copy())
+    matplotlib_command.clear()
     pass
 
 def p_fields(p):
     '''fields : FIELDNAME ',' FIELDNAME
-              | '[' FIELDNAME ',' FIELDNAME ']' ',' FIELDNAME'''
-    command.update({'x_fieldname': p[1], 'y_fieldname': p[3]})
+              | fields ',' FIELDNAME
+              | '[' fields ']' ',' FIELDNAME'''
+    if (p[1] == '['):
+        matplotlib_command.update({'x_fieldnames': p[2], 'y_fieldname': p[5]})
+    else:
+        if isinstance(p[1], list):
+            matplotlib_command.update({'x_fieldnames': p[1], 'y_fieldname': p[3]})
+        else:
+            matplotlib_command.update({'x_fieldname': p[1], 'y_fieldname': p[3]})
+    if not isinstance(p[1], list):
+        p[0] = [p[1], p[3]]
+    else:
+        p[0] = p[1] + [p[3]]
     pass
 
 def p_display(p):
-    '''display : LINE style
+    '''display : PLOT style
                | BAR style
                | STACKBAR stackbar_style'''
-    command.update({'plot_style': p[1]})
+    matplotlib_command.update({'plot_style': p[1]})
     pass
 
 def p_style(p):
     '''style : WIDTH DRAW_STYLE COLOR'''
-    command.update({'width': int(p[1][:-2]), 'draw_style': p[2], 'color': p[3]})
+    matplotlib_command.update({'width': int(p[1][:-2]), 'draw_style': p[2], 'color': p[3]})
     pass
 
 def p_stackbar_style(p):
@@ -130,6 +142,24 @@ def p_error(p):
 lexer = lex.lex()
 parser = yacc.yacc()
 
+#
+# COMMAND LINE INTERFACE
+#
+
+# Define the parser for the plt language
+plt_parser = argparse.ArgumentParser(add_help=False)
+plt_parser.add_argument('plt', nargs='?', type=str, help='The plt language string')
+
+# Parse the command line arguments
+parser = argparse.ArgumentParser(parents=[plt_parser])
+parser.add_argument('--py', action='store_true', help='Print the generated Python code and exit')
+parser.add_argument('--debug', action='store_true', help='Print commands and exit')
+args = parser.parse_args()
+
+#
+# MATPLOTLIB COMMANDS GENERATION
+#
+
 # Check if the plt language string is provided
 if args.plt:
     # Parse the plt language string using the lexer and parser
@@ -137,7 +167,26 @@ if args.plt:
     # A single pass compiler builds the matplotlib commands as we parse the plt language string
     parser.parse(args.plt)
 
-# Compile the matplotlib commands into Python code
+#
+# DEBUGGING
+#
+
+# Print the commands and exit if the --debug flag is used
+if args.debug:
+    print("\n\033[4mTokens\033[0m\n")
+    lexer.input(args.plt)
+    for tok in lexer:
+        print(tok)
+    print("\n\033[4mCommands\033[0m\n")
+    for command in matplotlib_commands:
+        pprint.pprint(command)
+        print()
+    sys.exit()
+
+#
+# PYTHON CODE GENERATION
+#
+
 output = """#!/usr/bin/env python3
 
 import csv
@@ -165,25 +214,24 @@ for row in reader:
 # Generate the plot
 fig, ax = plt.subplots(figsize=(8, 5))
 """
-# Iterate over the commands array and create the respective plot types
-for command in commands:
-    output += f"\n\n# {command['plot_style']} plot for [{command['x_fieldname']}, {command['y_fieldname']}]"
-    output += f"\n\nx_value = [float(x) for x in data['{command['x_fieldname']}']]"
-    output += f"\ny_value = data['{command['y_fieldname']}']"
-    color = command['color']
-    width = command['width']
-    if command['plot_style'] == 'line':
-        output += f"\nax.plot(y_value, x_value, color='{color}', linewidth={width})"
-    elif command['plot_style'] == 'bar':
-        output += f"\nax.bar(y_value, x_value, color='{color}', width={width / 50}, alpha=0.5)"
 
-# Update the legend names and labels
+# Iterate over the matplotlib commands array and create the respective plot types
+for command in matplotlib_commands:
+    output += f"\n\n# {command['plot_style']}: [{command['x_fieldname']}, {command['y_fieldname']}]"
+    output += f"\n\nx_{command['x_fieldname']}_value = [float(x) for x in data['{command['x_fieldname']}']]"
+    output += f"\ny_value = data['{command['y_fieldname']}']"
+    if command['plot_style'] == 'plot':
+        output += f"\nax.plot(y_value, x_{command['x_fieldname']}_value, color='{command['color']}', linewidth={command['width']})"
+    elif command['plot_style'] == 'bar':
+        output += f"\nax.bar(y_value, x_{command['x_fieldname']}_value, color='{command['color']}', width={command['width'] / 50}, alpha=0.5)"
+
 output += f"""\n
-legend_names = {[command['x_fieldname'].capitalize() for command in commands]}
+# Update the legend names and labels
+legend_names = {[command['x_fieldname'].replace('_', ' ').replace('-', ' ').title() for command in matplotlib_commands]}
 ax.legend(legend_names)
 
 # Replace underscores and dashes with spaces, and capitalize the first letter of each word
-x_label = "{commands[0]['y_fieldname']}".replace('_', ' ').replace('-', ' ').title()
+x_label = "{matplotlib_commands[0]['y_fieldname']}".replace('_', ' ').replace('-', ' ').title()
 
 ax.set_xlabel(x_label)
 ax.set_ylabel('Count')
@@ -194,10 +242,18 @@ fig.subplots_adjust(bottom=0.2)
 # Save the plot to stdout as a PNG image
 plt.savefig(sys.stdout.buffer, format='png')"""
 
+#
+# PRINT PYTHON CODE WITH TEXT OUTPUT
+#
+
 # Print the generated Python code and exit if the --py flag is used
 if args.py:
     print(output)
     sys.exit()
+
+#
+# EXECUTE PYTHON CODE WITH PNG OUTPUT
+#
 
 # Save the plot to a temporary file
 with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
