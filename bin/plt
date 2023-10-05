@@ -229,23 +229,35 @@ fig, ax = plt.subplots(figsize=(8, 5))
 
 # Iterate over the matplotlib commands array and create the respective plot types
 for command in matplotlib_commands:
-    output += f"\ny_value = data['{command['y_fieldname']}']"    
+    # Print comment about command
     if 'x_fieldname' in command:
         output += f"\n\n# {command['plot_style']}: [{command['x_fieldname']}, {command['y_fieldname']}]"
-        output += f"\n\nx_{command['x_fieldname']}_value = [float(x) for x in data['{command['x_fieldname']}']]"
-        if command['plot_style'] == 'plot':
-            output += f"\nax.plot(y_value, x_{command['x_fieldname']}_value, color='{command['color']}', linewidth={command['width']})"
-        elif command['plot_style'] == 'bar':
-            output += f"\nax.bar(y_value, x_{command['x_fieldname']}_value, color='{command['color']}', width={command['width'] / 50}, alpha=0.5)"
     else:
         output += f"\n\n# {command['plot_style']}: [{command['x_fieldnames']}, {command['y_fieldname']}]"
-        # output += "\n\nx_values = ["
+
+    # Print y_value
+    output += f"\ny_value = data['{command['y_fieldname']}']"
+
+    if 'x_fieldname' in command:
+        # Print x_{fieldname}_value
+        output += f"\n\nx_{command['x_fieldname']}_value = [float(x) for x in data['{command['x_fieldname']}']]"
+        if command['plot_style'] == 'plot':
+            # Print plot command
+            output += f"\nax.plot(y_value, x_{command['x_fieldname']}_value, color='{command['color']}', linewidth={command['width']})"
+        elif command['plot_style'] == 'bar':
+            # Print bar command
+            output += f"\nax.bar(y_value, x_{command['x_fieldname']}_value, color='{command['color']}', width={command['width'] / 50}, alpha=0.5)"
+    else:
+        # Print x_values
+        output += f"\n\nx_values ="
         for field in command['x_fieldnames']:
-            output += f"[float(x) for x in data['{field}']] + "
+            output += f"[float(x) for x in data['{field}']]"
+            if field != command['x_fieldnames'][-1]:
+                output += " + "
  
 if 'x_fieldname' in command:
     output += f"\nlegend_names = {[command['x_fieldname'].replace('_', ' ').replace('-', ' ').title() for command in matplotlib_commands]}"
-else:
+else: # this seems wrong... we need to be combining all x fieldnames and then getting the unique values
     output += f"\nlegend_names = {[field.replace('_', ' ').replace('-', ' ').title() for field in command['x_fieldnames']]}"
 
 output += f"""\n
