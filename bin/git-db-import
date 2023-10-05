@@ -36,7 +36,7 @@ create_commits_table = ("CREATE TABLE IF NOT EXISTS " + commits_table_name + " (
 cursor.execute(create_commits_table)
 
 # Call git log and parse the output
-git_log = subprocess.check_output(['git', 'log', '--pretty=format::::::%an::%ad::%ae::%H::%cd::%cn::%ce::%s', '--shortstat', '--reverse', '--date=format:%Y-%m-%d %H:%M:%S'])
+git_log = subprocess.check_output(['git', 'log', '--pretty=format::::::%an::%ad::%ae::%H::%cd::%cn::%ce::%s', '--all', '--shortstat', '--reverse', '--date=format:%Y-%m-%d %H:%M:%S'])
 commits = git_log.decode('utf-8').split(':::::')
 
 print("Inserting commits into " + commits_table_name + " table...")
@@ -47,14 +47,16 @@ for commit in commits:
         try:
             commit_data, stats = commit.split('\n', 1)
             author, author_date, author_email, commit_hash, commit_date, committer, committer_email, title = commit_data.split('::')
-            files_changed, insertions, deletions = 0, 0, 0
-            if 'files changed' in stats or 'file changed' in stats:
-                stats = stats.split(',')[0:3]
-                files_changed = int(stats[0].split()[0])
-                if 'insertion' in stats[1]:
-                    insertions = int(stats[1].split()[0].replace('(+)', ''))
-                if len(stats) > 2 and 'deletion' in stats[2]:
-                    deletions = int(stats[2].split()[0].replace('(-)', ''))
+
+            files_changed_match = re.search(r'(\d+) files? changed', stats)
+            files_changed = files_changed_match.group(1) if files_changed_match else 0
+
+            insertions_match = re.search(r'(\d+) insertions?', stats)
+            insertions = insertions_match.group(1) if insertions_match else 0
+
+            deletions_match = re.search(r'(\d+) deletions?', stats)
+            deletions = deletions_match.group(1) if deletions_match else 0
+
             # Insert the commit data into the database
             add_commit = ("INSERT INTO " + repository_name + "_git_commits "
                         "(author, author_date, author_email, commit_hash, commit_date, committer, committer_email, title, files_changed, insertions, deletions) "
