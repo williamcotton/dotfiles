@@ -27,7 +27,7 @@
 # FIELDNAME = [a-zA-Z0-9_]+;
 # WIDTH = [0-9]+ "px";
 # DRAW_STYLE = "solid" | "dashed" | "dotted";
-# COLOR = "red" | "green" | "blue" | "orange" | "black" | "#" [0-9a-fA-F]{6} | "#" [0-9a-fA-F]{3};
+# COLOR = "red" | "green" | "blue" | "orange" | "black" | "yellow" | "#" [0-9a-fA-F]{6} | "#" [0-9a-fA-F]{3};
 # ```
 
 import os
@@ -38,7 +38,8 @@ from ply import lex, yacc
 import argparse
 import pprint
 import sourcetypes
-from jinja2 import Template, Environment, DictLoader
+from jinja2 import Environment, DictLoader
+from collections import OrderedDict
 
 #
 # COMMAND LINE INTERFACE
@@ -70,11 +71,11 @@ legend_names = []
 # LANGUAGE DEFINITION
 #
 
-color_names = ["red", "green", "blue", "orange", "black"]
+color_names = ["red", "green", "blue", "orange", "yellow", "black"]
 draw_styles = ["solid", "dashed", "dotted"]
 
 # Define the reserved words
-reserved = {"plot": "PLOT", "bar": "BAR", "stackbar": "STACKBAR"}
+reserved = {"plot": "PLOT", "bar": "BAR", "stackbar": "STACKBAR", "highlight": "HIGHLIGHT"}
 
 reserved.update({color: "COLOR" for color in color_names})
 reserved.update({draw_style: "DRAW_STYLE" for draw_style in draw_styles})
@@ -83,6 +84,7 @@ reserved.update({draw_style: "DRAW_STYLE" for draw_style in draw_styles})
 tokens = (
     "FIELDNAME",
     "WIDTH",
+    "INTEGER",
 ) + tuple(set(reserved.values()))
 
 # Define the lexer rules
@@ -95,9 +97,10 @@ t_COLOR = f"({color_names_regex}|{hex_color_regex})"
 
 t_WIDTH = r"\d+px"
 
+t_INTEGER = r"\d+"
 
 def t_FIELDNAME(t):
-    r"[a-zA-Z_][a-zA-Z0-9_]*"  # field names must start with a letter or underscore
+    r"[a-zA-Z_][a-zA-Z0-9_\/]*"  # field names must start with a letter or underscore
     t.type = reserved.get(t.value, "FIELDNAME")  # Check for reserved words
     return t
 
@@ -162,13 +165,18 @@ def p_display(p):
     """display : PLOT WIDTH style
     | BAR WIDTH style
     | BAR WIDTH '[' multi_style ']'
-    | STACKBAR WIDTH '[' multi_style ']'"""
+    | STACKBAR WIDTH '[' multi_style ']'
+    | HIGHLIGHT INTEGER INTEGER style"""
     multi = True if p[3] == "[" else False
-    plot_type = p[1]
+    plot_template_prefix = p[1]
     if multi:
-        plot_type = "multi_" + plot_type
-    template_name = plot_type + "_template.py"
-    command.update({"plot_style": p[1], "width": int(p[2][:-2]), "template_name": template_name})
+        plot_template_prefix = "multi_" + plot_template_prefix
+    template_name = plot_template_prefix + "_template.py"
+    command.update({"plot_style": p[1], "template_name": template_name})
+    if p[1] == "highlight":
+        command.update({"start": int(p[2]), "end": int(p[3])})
+    else:
+        command.update({ "width": int(p[2][:-2]) })
     pass
 
 
@@ -205,7 +213,9 @@ def p_multi_style(p):
 
 
 def p_error(p):
-    print("Syntax error in input:", p)
+    sys.stderr.write("Syntax error in input: " + str(p) + "\n")
+    print()
+    exit(1)
 
 
 # Build the lexer and parser
@@ -223,7 +233,7 @@ if args.plt:
     # A single pass compiler builds the matplotlib commands as we parse the plt language string
     parser.parse(args.plt)
     # Make unique legend names
-    legend_names = list(set(legend_names))
+    legend_names = list(OrderedDict.fromkeys(legend_names))
 
 #
 # DEBUGGING
@@ -252,6 +262,8 @@ import csv
 import sys
 import io
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import matplotlib.transforms as transforms
 import numpy as np
 
 # Read CSV or TSV from STDIN
@@ -274,17 +286,20 @@ for row in reader:
 # Generate the plot
 fig, ax = plt.subplots(figsize=(8, 5))
 
-{% for command in matplotlib_commands %}
+{%- for command in matplotlib_commands %}
+
 ### {{ command['plot_style_title'] }}: {{ command['fields_title'] }}
-{% include command['template_name'] %}
-{% endfor %}
+x_value = data['{{ command['x_fieldname'] }}']
+x = np.arange(len(x_value))
+ax.set_xticks(x, x_value)
+{%- include command['template_name'] %}
+{%- endfor %}
 
 # Update the legend names and labels
 ax.legend({{legend_names}})
 
 # Set the x-axis labels
 ax.set_xlabel('{{ matplotlib_commands[0]['x_fieldname'].replace('_', ' ').replace('-', ' ').title() }}')
-ax.set_xticks(x + width, x_value)
 plt.xticks(rotation=90)
 
 # Set the y-axis label
@@ -292,47 +307,53 @@ ax.set_ylabel('Count')
 
 # Add space for the x-axis labels
 fig.subplots_adjust(bottom=0.2)
-
 # Save the plot to stdout as a PNG image
 plt.savefig(sys.stdout.buffer, format='png')
 """
 
 ### plot_template.py ##########################################################
 plot_template_str: sourcetypes.python = """
-x_value = data['{{ command['x_fieldname'] }}']
-x = np.arange(len(x_value))
-
 y_{{ command['y_fieldname'] }}_value = [float(y) for y in data['{{ command['y_fieldname'] }}']]
-
 width = 0.02
 ax.plot(x_value, y_{{ command['y_fieldname'] }}_value, color='{{ command['color'] }}', linewidth={{ command['width'] }})
 """
 
 ### bar_template.py ###########################################################
 bar_template_str: sourcetypes.python = """
-x_value = data['{{ command['x_fieldname'] }}']
-x = np.arange(len(x_value))
-
 y_{{ command['y_fieldname'] }}_value = [float(y) for y in data['{{ command['y_fieldname'] }}']]
-
 width = 0.02
 ax.bar(x_value, y_{{ command['y_fieldname'] }}_value, color='{{ command['color'] }}', width={{ command['width'] / 50 }}, alpha=0.5)
 """
 
 ## multi_bar_template.py ######################################################
 multi_bar_template_str: sourcetypes.python = """
-x_value = data['{{ command['x_fieldname'] }}']
-x = np.arange(len(x_value))
-
 y_values = [np.array([float(y) for y in data[field]]) for field in {{ command['y_fieldnames'] }}]
-
 styles = {{ command['styles'] }}
 width = {{ command['width'] / 50 }}
+ax.set_xticks(x + width, x_value)
 multiplier = 0
 for index, field in enumerate({{ command['y_fieldnames'] }}):
     offset = width * multiplier
     rects = ax.bar(x + offset, y_values[index], width, color=styles[index]['color'], linewidth=1)
     multiplier += 1
+"""
+
+## multi_stackbar_template.py #################################################
+multi_stackbar_template_str: sourcetypes.python = """
+y_values = [np.array([float(y) for y in data[field]]) for field in {{ command['y_fieldnames'] }}]
+styles = {{ command['styles'] }}
+width = {{ command['width'] / 50 }}
+bottom = np.zeros(3)
+for index, field in enumerate({{ command['y_fieldnames'] }}):
+    rects = ax.bar(x_value, y_values[index], width, color=styles[index]['color'], bottom=bottom)
+    bottom += y_values[index]
+"""
+
+## highlight_template.py ######################################################
+highlight_template_str: sourcetypes.python = """
+trans = transforms.blended_transform_factory(ax.transData, ax.transAxes)
+rect = mpatches.Rectangle(({{ command['start'] }}, 0), width={{ command['end'] - command['start'] }}, height=1, transform=trans, color='{{ command['color'] }}', alpha=0.5)
+ax.add_patch(rect)
 """
 ###############################################################################
 
@@ -342,6 +363,8 @@ templates = {
     "plot_template.py": plot_template_str,
     "bar_template.py": bar_template_str,
     "multi_bar_template.py": multi_bar_template_str,
+    "multi_stackbar_template.py": multi_stackbar_template_str,
+    "highlight_template.py": highlight_template_str,
 }
 
 # Create a Jinja environment with the DictLoader
