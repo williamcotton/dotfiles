@@ -37,6 +37,30 @@ import sys
 from ply import lex, yacc
 import argparse
 import pprint
+import sourcetypes
+from jinja2 import Template
+
+#
+# COMMAND LINE INTERFACE
+#
+
+# Define the parser for the plt language
+plt_parser = argparse.ArgumentParser(add_help=False)
+plt_parser.add_argument('plt', nargs='?', type=str, help='The plt language string')
+
+# Parse the command line arguments
+parser = argparse.ArgumentParser(parents=[plt_parser])
+parser.add_argument('--py', action='store_true', help='Print the generated Python code and exit')
+parser.add_argument('--debug', action='store_true', help='Print commands and exit')
+args = parser.parse_args()
+
+#
+# INTERMEDIARY DATA STRUCTURES
+#
+
+# Matplotlib commands
+matplotlib_commands = []
+matplotlib_command = {}
 
 #
 # LANGUAGE DEFINITION
@@ -83,10 +107,6 @@ def t_error(t):
     t.lexer.skip(1)
 
 literals = ['[', ']', '{', '}', ',']
-
-# Matplotlib commands
-matplotlib_commands = []
-matplotlib_command = {}
 
 # Define the parser rules
 def p_program(p):
@@ -155,21 +175,7 @@ lexer = lex.lex()
 parser = yacc.yacc()
 
 #
-# COMMAND LINE INTERFACE
-#
-
-# Define the parser for the plt language
-plt_parser = argparse.ArgumentParser(add_help=False)
-plt_parser.add_argument('plt', nargs='?', type=str, help='The plt language string')
-
-# Parse the command line arguments
-parser = argparse.ArgumentParser(parents=[plt_parser])
-parser.add_argument('--py', action='store_true', help='Print the generated Python code and exit')
-parser.add_argument('--debug', action='store_true', help='Print commands and exit')
-args = parser.parse_args()
-
-#
-# MATPLOTLIB COMMANDS GENERATION
+# PARSE FOR INTERMEDIARY DATA
 #
 
 # Check if the plt language string is provided
@@ -199,7 +205,8 @@ if args.debug:
 # PYTHON CODE GENERATION
 #
 
-output = """#!/usr/bin/env python3
+# Define the Jinja template
+template_str: sourcetypes.python = """#!/usr/bin/env python3
 
 import csv
 import sys
@@ -226,52 +233,67 @@ for row in reader:
 
 # Generate the plot
 fig, ax = plt.subplots(figsize=(8, 5))
-"""
 
-# Iterate over the matplotlib commands array and create the respective plot types
-for command in matplotlib_commands:
-    if 'y_fieldname' in command:
-        output += f"\n\n### {command['plot_style'].replace('_', ' ').replace('-', ' ').title()}: [{command['y_fieldname']}, {command['x_fieldname']}]"
-    else:
-        output += f"\n\n### {command['plot_style'].replace('_', ' ').replace('-', ' ').title()}: [{command['y_fieldnames']}, {command['x_fieldname']}]"
-    output += f"\nx = np.arange(len(data['{command['x_fieldname']}']))"
-    if 'y_fieldname' in command:
-        output += f"\nx_value = data['{command['x_fieldname']}']"
-        output += f"\ny_{command['y_fieldname']}_value = [float(y) for y in data['{command['y_fieldname']}']]"
-        output += f"\nwidth = {command['width'] / 50}"
-        if command['plot_style'] == 'plot':
-            output += f"\nax.plot(x_value, y_{command['y_fieldname']}_value, color='{command['color']}', linewidth={command['width']})"
-        elif command['plot_style'] == 'bar':
-            output += f"\nax.bar(x_value, y_{command['y_fieldname']}_value, color='{command['color']}', width={command['width'] / 50}, alpha=0.5)"
-    elif 'y_fieldnames' in command and 'styles' in command:
-        output += f"\ny_values = [np.array([float(y) for y in data[field]]) for field in {command['y_fieldnames']}]"
-        output += f"\nstyles = {command['styles']}"
-        output += f"\nwidth = {command['width'] / 50}"
-        output += f"\nmultiplier = 0"
-        output += f"\nfor index, field in enumerate({command['y_fieldnames']}):"
-        output += f"\n    offset = width * multiplier"
-        output += f"\n    rects = ax.bar(x + offset, y_values[index], width, color=styles[index]['color'], linewidth=1)"
-        output += f"\n    multiplier += 1"
-output += f"\n\n# Update the legend names and labels"
-if 'y_fieldname' in command:
-    output += f"\nlegend_names = {[command['y_fieldname'].replace('_', ' ').replace('-', ' ').title() for command in matplotlib_commands]}"
-else: # TODO: this is wrong we need to be combining all x fieldnames and then getting the unique values
-    output += f"\nlegend_names = {[field.replace('_', ' ').replace('-', ' ').title() for field in command['y_fieldnames']]}"
-output +=f"""
-ax.legend(legend_names)
+{% for command in matplotlib_commands %}
+{% if 'y_fieldname' in command %}
+### {{ command['plot_style'].replace('_', ' ').replace('-', ' ').title() }}: [{{ command['y_fieldname'] }}, {{ command['x_fieldname'] }}]
+{% else %}
+### {{ command['plot_style'].replace('_', ' ').replace('-', ' ').title() }}: [{{ command['y_fieldnames'] }}, {{ command['x_fieldname'] }}]
+{% endif %}
+x_value = data['{{ command['x_fieldname'] }}']
+x = np.arange(len(x_value))
+{% if 'y_fieldname' in command %}
+y_{{ command['y_fieldname'] }}_value = [float(y) for y in data['{{ command['y_fieldname'] }}']]
+width = {{ command['width'] / 50 }}
+{% if command['plot_style'] == 'plot' %}
+ax.plot(x_value, y_{{ command['y_fieldname'] }}_value, color='{{ command['color'] }}', linewidth={{ command['width'] }})
+{% elif command['plot_style'] == 'bar' %}
+ax.bar(x_value, y_{{ command['y_fieldname'] }}_value, color='{{ command['color'] }}', width={{ command['width'] / 50 }}, alpha=0.5)
+{% endif %}
+{% elif 'y_fieldnames' in command and 'styles' in command %}
+y_values = [np.array([float(y) for y in data[field]]) for field in {{ command['y_fieldnames'] }}]
+styles = {{ command['styles'] }}
+width = {{ command['width'] / 50 }}
+multiplier = 0
+for index, field in enumerate({{ command['y_fieldnames'] }}):
+    offset = width * multiplier
+    rects = ax.bar(x + offset, y_values[index], width, color=styles[index]['color'], linewidth=1)
+    multiplier += 1
+{% endif %}
+{% endfor %}
 
-# Replace underscores and dashes with spaces, and capitalize the first letter of each word
-x_label = "{matplotlib_commands[0]['x_fieldname']}".replace('_', ' ').replace('-', ' ').title()
+# Update the legend names and labels
+ax.legend({{legend_names}})
 
-ax.set_xlabel(x_label)
-ax.set_xticks(x + width, data['{command['x_fieldname']}'])
+# Set the x-axis labels
+ax.set_xlabel('{{ matplotlib_commands[0]['x_fieldname'].replace('_', ' ').replace('-', ' ').title() }}')
+ax.set_xticks(x + width, x_value)
 plt.xticks(rotation=90)
+
+# Set the y-axis label
 ax.set_ylabel('Count')
 
+# Add space for the x-axis labels
 fig.subplots_adjust(bottom=0.2)
 
 # Save the plot to stdout as a PNG image
-plt.savefig(sys.stdout.buffer, format='png')"""
+plt.savefig(sys.stdout.buffer, format='png')
+"""
+
+# Create a Jinja template object
+template = Template(template_str)
+
+# Generate the legend names
+legend_names = []
+for command in matplotlib_commands:
+    if 'y_fieldname' in command:
+        legend_names.append(command['y_fieldname'].replace('_', ' ').replace('-', ' ').title())
+    else:
+        legend_names += [field.replace('_', ' ').replace('-', ' ').title() for field in command['y_fieldnames']]
+legend_names = list(set(legend_names))
+
+# Render the template with the data
+output = template.render(matplotlib_commands=matplotlib_commands, legend_names=legend_names)
 
 #
 # PRINT PYTHON CODE WITH TEXT OUTPUT
