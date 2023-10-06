@@ -96,8 +96,8 @@ def p_program(p):
 
 def p_command(p):
     '''command : fields '{' display '}' '''
-    if 'x_fieldnames' in matplotlib_command:
-        del matplotlib_command['x_fieldname']
+    if 'y_fieldnames' in matplotlib_command:
+        del matplotlib_command['y_fieldname']
     matplotlib_commands.append(matplotlib_command.copy())
     matplotlib_command.clear()
     pass
@@ -107,12 +107,12 @@ def p_fields(p):
               | fields ',' FIELDNAME
               | '[' fields ']' ',' FIELDNAME'''
     if (p[1] == '['):
-        matplotlib_command.update({'x_fieldnames': p[2], 'y_fieldname': p[5]})
+        matplotlib_command.update({'y_fieldnames': p[2], 'x_fieldname': p[5]})
     else:
         if isinstance(p[1], list):
-            matplotlib_command.update({'x_fieldnames': p[1], 'y_fieldname': p[3]})
+            matplotlib_command.update({'y_fieldnames': p[1], 'x_fieldname': p[3]})
         else:
-            matplotlib_command.update({'x_fieldname': p[1], 'y_fieldname': p[3]})
+            matplotlib_command.update({'y_fieldname': p[1], 'x_fieldname': p[3]})
     if not isinstance(p[1], list):
         p[0] = [p[1], p[3]]
     else:
@@ -205,6 +205,7 @@ import csv
 import sys
 import io
 import matplotlib.pyplot as plt
+import numpy as np
 
 # Read CSV or TSV from STDIN
 input_file = io.StringIO(sys.stdin.read())
@@ -229,49 +230,44 @@ fig, ax = plt.subplots(figsize=(8, 5))
 
 # Iterate over the matplotlib commands array and create the respective plot types
 for command in matplotlib_commands:
-    # Print comment about command
-    if 'x_fieldname' in command:
-        output += f"\n\n# {command['plot_style']}: [{command['x_fieldname']}, {command['y_fieldname']}]"
+    if 'y_fieldname' in command:
+        output += f"\n\n### {command['plot_style'].replace('_', ' ').replace('-', ' ').title()}: [{command['y_fieldname']}, {command['x_fieldname']}]"
     else:
-        output += f"\n\n# {command['plot_style']}: [{command['x_fieldnames']}, {command['y_fieldname']}]"
-
-    # Print y_value
-    output += f"\ny_value = data['{command['y_fieldname']}']"
-
-    if 'x_fieldname' in command:
-        # Print x_{fieldname}_value
-        output += f"\n\nx_{command['x_fieldname']}_value = [float(x) for x in data['{command['x_fieldname']}']]"
+        output += f"\n\n### {command['plot_style'].replace('_', ' ').replace('-', ' ').title()}: [{command['y_fieldnames']}, {command['x_fieldname']}]"
+    output += f"\nx = np.arange(len(data['{command['x_fieldname']}']))"
+    if 'y_fieldname' in command:
+        output += f"\nx_value = data['{command['x_fieldname']}']"
+        output += f"\ny_{command['y_fieldname']}_value = [float(y) for y in data['{command['y_fieldname']}']]"
+        output += f"\nwidth = {command['width'] / 50}"
         if command['plot_style'] == 'plot':
-            # Print plot command
-            output += f"\nax.plot(y_value, x_{command['x_fieldname']}_value, color='{command['color']}', linewidth={command['width']})"
+            output += f"\nax.plot(x_value, y_{command['y_fieldname']}_value, color='{command['color']}', linewidth={command['width']})"
         elif command['plot_style'] == 'bar':
-            # Print bar command
-            output += f"\nax.bar(y_value, x_{command['x_fieldname']}_value, color='{command['color']}', width={command['width'] / 50}, alpha=0.5)"
-    else:
-        # Print x_values
-        output += f"\n\nx_values ="
-        for field in command['x_fieldnames']:
-            output += f"[float(x) for x in data['{field}']]"
-            if field != command['x_fieldnames'][-1]:
-                output += " + "
- 
-if 'x_fieldname' in command:
-    output += f"\nlegend_names = {[command['x_fieldname'].replace('_', ' ').replace('-', ' ').title() for command in matplotlib_commands]}"
-else: # this seems wrong... we need to be combining all x fieldnames and then getting the unique values
-    output += f"\nlegend_names = {[field.replace('_', ' ').replace('-', ' ').title() for field in command['x_fieldnames']]}"
-
-output += f"""\n
-# Update the legend names and labels
-
+            output += f"\nax.bar(x_value, y_{command['y_fieldname']}_value, color='{command['color']}', width={command['width'] / 50}, alpha=0.5)"
+    elif 'y_fieldnames' in command and 'styles' in command:
+        output += f"\ny_values = [np.array([float(y) for y in data[field]]) for field in {command['y_fieldnames']}]"
+        output += f"\nstyles = {command['styles']}"
+        output += f"\nwidth = {command['width'] / 50}"
+        output += f"\nmultiplier = 0"
+        output += f"\nfor index, field in enumerate({command['y_fieldnames']}):"
+        output += f"\n    offset = width * multiplier"
+        output += f"\n    rects = ax.bar(x + offset, y_values[index], width, color=styles[index]['color'], linewidth=1)"
+        output += f"\n    multiplier += 1"
+output += f"\n\n# Update the legend names and labels"
+if 'y_fieldname' in command:
+    output += f"\nlegend_names = {[command['y_fieldname'].replace('_', ' ').replace('-', ' ').title() for command in matplotlib_commands]}"
+else: # TODO: this is wrong we need to be combining all x fieldnames and then getting the unique values
+    output += f"\nlegend_names = {[field.replace('_', ' ').replace('-', ' ').title() for field in command['y_fieldnames']]}"
+output +=f"""
 ax.legend(legend_names)
 
 # Replace underscores and dashes with spaces, and capitalize the first letter of each word
-x_label = "{matplotlib_commands[0]['y_fieldname']}".replace('_', ' ').replace('-', ' ').title()
+x_label = "{matplotlib_commands[0]['x_fieldname']}".replace('_', ' ').replace('-', ' ').title()
 
 ax.set_xlabel(x_label)
+ax.set_xticks(x + width, data['{command['x_fieldname']}'])
+plt.xticks(rotation=90)
 ax.set_ylabel('Count')
 
-plt.xticks(rotation=90)
 fig.subplots_adjust(bottom=0.2)
 
 # Save the plot to stdout as a PNG image
