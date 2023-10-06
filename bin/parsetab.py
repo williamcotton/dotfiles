@@ -6,7 +6,7 @@ _tabversion = '3.10'
 
 _lr_method = 'LALR'
 
-_lr_signature = "BAR COLOR DRAW_STYLE FIELDNAME PLOT STACKBAR WIDTHprogram : command\n               | program commandcommand : fields '{' display '}' fields : FIELDNAME ',' FIELDNAME\n              | fields ',' FIELDNAME\n              | '[' fields ']' ',' FIELDNAMEdisplay : PLOT WIDTH style\n               | BAR WIDTH style\n               | BAR WIDTH '[' stackbar_style ']'\n               | STACKBAR WIDTH '[' stackbar_style ']' style : DRAW_STYLE COLORstackbar_style : DRAW_STYLE COLOR ',' DRAW_STYLE COLOR\n                      | stackbar_style ',' DRAW_STYLE COLOR"
+_lr_signature = "BAR COLOR DRAW_STYLE FIELDNAME PLOT STACKBAR WIDTHprogram : command\n    | program commandcommand : fields '{' display '}'fields : FIELDNAME ',' FIELDNAME\n    | fields ',' FIELDNAME\n    | '[' fields ']' ',' FIELDNAMEdisplay : PLOT WIDTH style\n    | BAR WIDTH style\n    | BAR WIDTH '[' stackbar_style ']'\n    | STACKBAR WIDTH '[' stackbar_style ']'style : DRAW_STYLE COLORstackbar_style : DRAW_STYLE COLOR ',' DRAW_STYLE COLOR\n    | stackbar_style ',' DRAW_STYLE COLOR"
     
 _lr_action_items = {'FIELDNAME':([0,1,2,5,6,8,9,18,22,],[4,4,-1,4,-2,15,16,-3,28,]),'[':([0,1,2,5,6,18,20,21,],[5,5,-1,5,-2,-3,26,27,]),'$end':([1,2,6,18,],[0,-1,-2,-3,]),'{':([3,15,16,28,],[7,-5,-4,-6,]),',':([3,4,10,15,16,17,28,30,32,35,39,41,],[8,9,8,-5,-4,22,-6,34,34,38,-13,-12,]),'PLOT':([7,],[12,]),'BAR':([7,],[13,]),'STACKBAR':([7,],[14,]),']':([10,15,16,28,30,32,39,41,],[17,-5,-4,-6,33,36,-13,-12,]),'}':([11,23,25,29,33,36,],[18,-7,-8,-11,-9,-10,]),'WIDTH':([12,13,14,],[19,20,21,]),'DRAW_STYLE':([19,20,26,27,34,38,],[24,24,31,31,37,40,]),'COLOR':([24,31,37,40,],[29,35,39,41,]),}
 
@@ -27,17 +27,17 @@ for _k, _v in _lr_goto_items.items():
 del _lr_goto_items
 _lr_productions = [
   ("S' -> program","S'",1,None,None,None),
-  ('program -> command','program',1,'p_program','plt',93),
-  ('program -> program command','program',2,'p_program','plt',94),
-  ('command -> fields { display }','command',4,'p_command','plt',98),
-  ('fields -> FIELDNAME , FIELDNAME','fields',3,'p_fields','plt',106),
-  ('fields -> fields , FIELDNAME','fields',3,'p_fields','plt',107),
-  ('fields -> [ fields ] , FIELDNAME','fields',5,'p_fields','plt',108),
-  ('display -> PLOT WIDTH style','display',3,'p_display','plt',123),
-  ('display -> BAR WIDTH style','display',3,'p_display','plt',124),
-  ('display -> BAR WIDTH [ stackbar_style ]','display',5,'p_display','plt',125),
-  ('display -> STACKBAR WIDTH [ stackbar_style ]','display',5,'p_display','plt',126),
-  ('style -> DRAW_STYLE COLOR','style',2,'p_style','plt',131),
-  ('stackbar_style -> DRAW_STYLE COLOR , DRAW_STYLE COLOR','stackbar_style',5,'p_stackbar_style','plt',136),
-  ('stackbar_style -> stackbar_style , DRAW_STYLE COLOR','stackbar_style',4,'p_stackbar_style','plt',137),
+  ('program -> command','program',1,'p_program','plt',116),
+  ('program -> program command','program',2,'p_program','plt',117),
+  ('command -> fields { display }','command',4,'p_command','plt',122),
+  ('fields -> FIELDNAME , FIELDNAME','fields',3,'p_fields','plt',131),
+  ('fields -> fields , FIELDNAME','fields',3,'p_fields','plt',132),
+  ('fields -> [ fields ] , FIELDNAME','fields',5,'p_fields','plt',133),
+  ('display -> PLOT WIDTH style','display',3,'p_display','plt',149),
+  ('display -> BAR WIDTH style','display',3,'p_display','plt',150),
+  ('display -> BAR WIDTH [ stackbar_style ]','display',5,'p_display','plt',151),
+  ('display -> STACKBAR WIDTH [ stackbar_style ]','display',5,'p_display','plt',152),
+  ('style -> DRAW_STYLE COLOR','style',2,'p_style','plt',158),
+  ('stackbar_style -> DRAW_STYLE COLOR , DRAW_STYLE COLOR','stackbar_style',5,'p_stackbar_style','plt',164),
+  ('stackbar_style -> stackbar_style , DRAW_STYLE COLOR','stackbar_style',4,'p_stackbar_style','plt',165),
 ]
