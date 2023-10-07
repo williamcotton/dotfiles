@@ -34,12 +34,15 @@ import os
 import tempfile
 import subprocess
 import sys
+import re
 from ply import lex, yacc
 import argparse
 import pprint
 import sourcetypes
 from jinja2 import Environment, DictLoader
 from collections import OrderedDict
+from PIL import Image, ImageDraw, ImageFont
+from io import BytesIO
 
 #
 # COMMAND LINE INTERFACE
@@ -56,6 +59,33 @@ parser.add_argument(
 )
 parser.add_argument("--debug", action="store_true", help="Print commands and exit")
 args = parser.parse_args()
+
+#
+# ERROR IMAGE
+#
+
+# Create a new image with a transparent background
+error_image = Image.new("RGBA", (1000, 40), (0, 0, 0, 0))
+
+# Draw a red line on the image
+draw = ImageDraw.Draw(error_image)
+draw.line((0, 20, 400, 20), fill="red", width=1)
+draw.line((600, 20, 1000, 20), fill="red", width=1)
+
+# Add the text "Syntax Error" in the middle of the red bar
+font_path = "/System/Library/Fonts/SFNS.ttf"
+font = ImageFont.truetype(font_path, 25)
+bbox = font.getbbox("Syntax Error")
+text_width = bbox[2] - bbox[0]
+text_height = bbox[3] - bbox[1]
+text_x = (1000 - text_width) // 2
+text_y = (30 - text_height) // 2
+draw.text((text_x, text_y), "Syntax Error", font=font, fill="red")
+
+# Save the image to a buffer
+error_image_buffer = BytesIO()
+error_image.save(error_image_buffer, format="PNG")
+
 
 #
 # INTERMEDIARY DATA STRUCTURES
@@ -211,10 +241,43 @@ def p_multi_style(p):
 
     pass
 
+def underline_error(code, p):
+    # Get the token value and position
+    token_value = p.value
+    token_pos = p.lexpos
+
+    # Search for the token in the code
+    match = re.search(re.escape(token_value), code[token_pos:])
+    if match:
+        start_index = token_pos + match.start()
+        end_index = token_pos + match.end()
+
+        # Split the code into lines
+        lines = code.split("\n")
+
+        # Find the line number of the token
+        line_number = 1
+        for i, line in enumerate(lines):
+            if start_index >= len(line):
+                start_index -= len(line) + 1
+                end_index -= len(line) + 1
+                line_number += 1
+            else:
+                break
+
+        # Underline the token in red
+        line = lines[line_number - 1]
+        underline = line[:start_index] + "\033[91m" + "\033[4m" + token_value + "\033[0m" + "\033[0m" + line[end_index:]
+        lines[line_number - 1] = underline
+
+        # Print the code with the underlined token and the entire line
+        return "\n".join(lines) + "\n"
+    else:
+        return "Error: could not find token '{}' in code".format(token_value)
 
 def p_error(p):
-    sys.stderr.write("Syntax error in input: " + str(p) + "\n")
-    print()
+    sys.stderr.write("\n" + underline_error(args.plt, p) + "\n")
+    sys.stdout.buffer.write(error_image_buffer.getvalue())
     exit(1)
 
 
