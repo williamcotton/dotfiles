@@ -115,6 +115,8 @@ tokens = (
     "FIELDNAME",
     "WIDTH",
     "INTEGER",
+    "LBRACKET",
+    "RBRACKET",
 ) + tuple(set(reserved.values()))
 
 # Define the lexer rules
@@ -131,20 +133,31 @@ t_INTEGER = r"\d+"
 
 def t_FIELDNAME(t):
     r"[a-zA-Z_][a-zA-Z0-9_\/]*"  # field names must start with a letter or underscore
-    t.type = reserved.get(t.value, "FIELDNAME")  # Check for reserved words
+    if t.lexer.start_fields != True or t.lexer.fields_processed == True:
+        t.type = reserved.get(t.value, "FIELDNAME")  # Check for reserved words
     return t
 
-
 t_ignore = " \t\n"  # ignore whitespace and newlines
-
 
 def t_error(t):
     print("Unknown token:", t.value)
     t.lexer.skip(1)
 
 
-literals = ["[", "]", "{", "}", ","]
+def t_LBRACKET(t):
+    r"\["
+    t.lexer.start_fields = True
+    if t.lexer.fields_processed == True:
+        t.lexer.start_fields = False
+    return t
 
+def t_RBRACKET(t):
+    r"\]"
+    t.lexer.start_fields = False
+    t.lexer.fields_processed = True
+    return t
+
+literals = ["{", "}", ","]
 
 # Define the parser rules
 def p_program(p):
@@ -176,7 +189,7 @@ def p_command(p):
 def p_fields(p):
     """fields : FIELDNAME ',' FIELDNAME
     | fields ',' FIELDNAME
-    | '[' fields ']' ',' FIELDNAME"""
+    | LBRACKET fields RBRACKET ',' FIELDNAME"""
     if p[1] == "[":
         command.update({"multi": True, "y_fieldnames": p[2], "x_fieldname": p[5]})
     else:
@@ -194,8 +207,8 @@ def p_fields(p):
 def p_display(p):
     """display : PLOT WIDTH style
     | BAR WIDTH style
-    | BAR WIDTH '[' multi_style ']'
-    | STACKBAR WIDTH '[' multi_style ']'
+    | BAR WIDTH LBRACKET multi_style RBRACKET
+    | STACKBAR WIDTH LBRACKET multi_style RBRACKET
     | HIGHLIGHT INTEGER INTEGER style"""
     multi = True if p[3] == "[" else False
     plot_template_prefix = p[1]
@@ -291,6 +304,9 @@ parser = yacc.yacc()
 
 # Check if the plt language string is provided
 if args.plt:
+    # Reset the lexer
+    lexer.start_fields = False
+    lexer.fields_processed = False
     # Parse the plt language string using the lexer and parser
     parser = yacc.yacc()
     # A single pass compiler builds the matplotlib commands as we parse the plt language string
