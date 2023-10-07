@@ -243,7 +243,7 @@ ss() {
   fi
   local filename="Chrome Screenshot $(date '+%Y-%m-%d at %I.%M.%S %p').png"
   local filepath="$HOME/Desktop/$filename"
-  chrome --headless --disable-gpu --window-size=1920,1080 --screenshot="$filepath" "$url" && imgcat --width $(tput cols) "$filepath"
+  chrome --headless --disable-gpu --window-size=1920,1080 --screenshot="$filepath" "$url" && imgcat --width $(tput cols) "$filepath" && impbcopy "$filepath"
 }
 
 htmltopng() {
@@ -271,6 +271,10 @@ htmltopng() {
   sleep 1
   cat "$filepath"
   rm "$filepath"
+}
+
+imgc() {
+  tee >(imgcat "$@") >(impbcopy -) > /dev/null
 }
 
 htmltopdf() {
