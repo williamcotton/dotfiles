@@ -86,7 +86,6 @@ draw.text((text_x, text_y), "Syntax Error", font=font, fill="red")
 error_image_buffer = BytesIO()
 error_image.save(error_image_buffer, format="PNG")
 
-
 #
 # INTERMEDIARY DATA STRUCTURES
 #
@@ -96,6 +95,9 @@ matplotlib_commands = []
 
 # Legend names
 legend_names = []
+
+# All field names
+field_names = []
 
 #
 # LANGUAGE DEFINITION
@@ -165,6 +167,22 @@ def p_program(p):
     | program command"""
     pass
 
+def p_error_command(p):
+    """command : fields display '}'
+    | fields '{' display"""
+    code = args.plt
+    if p[2] == "{":
+        message = "\nMissing '}'"
+        value = "{"
+    else:
+        message = "\nMissing '{'"
+        value = "}"
+    sys.stderr.write(underline_error(code, value, code.rfind(value, 0, p.lexer.lexpos)))
+    sys.stderr.write(message)
+    sys.stderr.write("\n\n")
+    sys.stdout.buffer.write(error_image_buffer.getvalue())
+    exit(1)
+
 command = {}
 def p_command(p):
     """command : fields '{' display '}'"""
@@ -175,12 +193,16 @@ def p_command(p):
             field.replace("_", " ").replace("-", " ").title()
             for field in command["y_fieldnames"]
         ])
+        field_names.extend(command["y_fieldnames"])
         del command["y_fieldname"]
     else:
         command["fields_title"] = f"[{command['y_fieldname']}, {command['x_fieldname']}]"
         legend_names.append(
             command['y_fieldname'].replace("_", " ").replace("-", " ").title()
         )
+        if command['plot_style'] != "highlight":
+            field_names.append(command["y_fieldname"])
+    field_names.append(command["x_fieldname"])    
     matplotlib_commands.append(command.copy())
     command.clear()
     pass
@@ -254,11 +276,7 @@ def p_multi_style(p):
 
     pass
 
-def underline_error(code, p):
-    # Get the token value and position
-    token_value = p.value
-    token_pos = p.lexpos
-
+def underline_error(code, token_value, token_pos):
     # Search for the token in the code
     match = re.search(re.escape(token_value), code[token_pos:])
     if match:
@@ -289,7 +307,9 @@ def underline_error(code, p):
         return "Error: could not find token '{}' in code".format(token_value)
 
 def p_error(p):
-    sys.stderr.write("\n" + underline_error(args.plt, p) + "\n")
+    sys.stderr.write("\nSyntax error:\n")
+    sys.stderr.write("\n" + str(p) + "\n")
+    sys.stderr.write("\n" + underline_error(args.plt, p.value, p.lexpos) + "\n")
     sys.stdout.buffer.write(error_image_buffer.getvalue())
     exit(1)
 
@@ -340,10 +360,13 @@ template_str: sourcetypes.python = """#!/usr/bin/env python3
 import csv
 import sys
 import io
+import re
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import matplotlib.transforms as transforms
 import numpy as np
+from PIL import Image, ImageDraw
+from io import BytesIO
 
 # Read CSV or TSV from STDIN
 input_file = io.StringIO(sys.stdin.read())
@@ -356,6 +379,24 @@ if '\\t' in first_line:
 else:
     # The input data is comma-delimited
     reader = csv.DictReader(input_file)
+
+# Check if the plot fieldnames are in the CSV or TSV
+plot_fieldnames = {{ field_names }}
+missing_fieldnames = []
+for fieldname in plot_fieldnames:
+    if fieldname not in reader.fieldnames:
+        missing_fieldnames.append(fieldname)
+
+# Print an error message and exit if the plot fieldnames are not in the CSV or TSV
+if len(missing_fieldnames) > 0:
+    print(f'\\nError: the following fieldnames are not in the CSV or TSV: \033[91m\033[4m{missing_fieldnames}\033[0m\033[0m\\n', file=sys.stderr)
+    error_image = Image.new("RGBA", (1000, 40), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(error_image)
+    draw.line((0, 20, 1000, 20), fill="red", width=1)
+    error_image_buffer = BytesIO()
+    error_image.save(error_image_buffer, format="PNG")
+    sys.stdout.buffer.write(error_image_buffer.getvalue())
+    sys.exit(1)
 
 data = {k: [] for k in reader.fieldnames}
 for row in reader:
@@ -453,6 +494,7 @@ env = Environment(loader=DictLoader(templates))
 output = env.get_template("template.py").render(
     matplotlib_commands=matplotlib_commands, 
     legend_names=legend_names,
+    field_names=field_names,
 )
 
 #
