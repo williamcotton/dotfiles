@@ -6,9 +6,9 @@ _tabversion = '3.10'
 
 _lr_method = 'LALR'
 
-_lr_signature = "BAR COLOR DRAW_STYLE FIELDNAME HIGHLIGHT INTEGER LBRACKET PLOT RBRACKET STACKBAR WIDTHprogram : command\n    | program commandcommand : fields '{' display '}'fields : FIELDNAME ',' FIELDNAME\n    | fields ',' FIELDNAME\n    | LBRACKET fields RBRACKET ',' FIELDNAMEdisplay : PLOT WIDTH style\n    | BAR WIDTH style\n    | BAR WIDTH LBRACKET multi_style RBRACKET\n    | STACKBAR WIDTH LBRACKET multi_style RBRACKET\n    | HIGHLIGHT INTEGER INTEGER stylestyle : DRAW_STYLE COLORmulti_style : DRAW_STYLE COLOR ',' DRAW_STYLE COLOR\n    | multi_style ',' DRAW_STYLE COLOR"
+_lr_signature = "BAR COLOR DRAW_STYLE FIELDNAME HIGHLIGHT INTEGER LBRACKET PLOT RBRACKET STACKBAR WIDTHprogram : command\n    | program commandcommand : fields display '}'\n    | fields '{' displaycommand : fields '{' display '}'fields : FIELDNAME ',' FIELDNAME\n    | fields ',' FIELDNAME\n    | LBRACKET fields RBRACKET ',' FIELDNAMEfields : LBRACKET fields ',' FIELDNAME\n    | fields RBRACKET ',' FIELDNAMEdisplay : PLOT WIDTH style\n    | BAR WIDTH style\n    | BAR WIDTH LBRACKET multi_style RBRACKET\n    | STACKBAR WIDTH LBRACKET multi_style RBRACKET\n    | HIGHLIGHT INTEGER INTEGER stylestyle : DRAW_STYLE COLORmulti_style : DRAW_STYLE COLOR ',' DRAW_STYLE COLOR\n    | multi_style ',' DRAW_STYLE COLOR"
     
-_lr_action_items = {'FIELDNAME':([0,1,2,5,6,8,9,19,24,],[4,4,-1,4,-2,16,17,-3,31,]),'LBRACKET':([0,1,2,5,6,19,21,22,],[5,5,-1,5,-2,-3,28,29,]),'$end':([1,2,6,19,],[0,-1,-2,-3,]),'{':([3,16,17,31,],[7,-5,-4,-6,]),',':([3,4,10,16,17,18,31,33,35,39,43,45,],[8,9,8,-5,-4,24,-6,38,38,42,-14,-13,]),'PLOT':([7,],[12,]),'BAR':([7,],[13,]),'STACKBAR':([7,],[14,]),'HIGHLIGHT':([7,],[15,]),'RBRACKET':([10,16,17,31,33,35,43,45,],[18,-5,-4,-6,37,40,-14,-13,]),'}':([11,25,27,32,36,37,40,],[19,-7,-8,-12,-11,-9,-10,]),'WIDTH':([12,13,14,],[20,21,22,]),'INTEGER':([15,23,],[23,30,]),'DRAW_STYLE':([20,21,28,29,30,38,42,],[26,26,34,34,26,41,44,]),'COLOR':([26,34,41,44,],[32,39,43,45,]),}
+_lr_action_items = {'FIELDNAME':([0,1,2,5,6,9,15,17,18,20,27,28,30,32,36,38,42,44,47,],[4,4,-1,4,-2,19,25,-3,-4,29,37,-5,-11,-12,43,-16,-15,-13,-14,]),'LBRACKET':([0,1,2,5,6,17,18,22,23,28,30,32,38,42,44,47,],[5,5,-1,5,-2,-3,-4,33,34,-5,-11,-12,-16,-15,-13,-14,]),'$end':([1,2,6,17,18,28,30,32,38,42,44,47,],[0,-1,-2,-3,-4,-5,-11,-12,-16,-15,-13,-14,]),'{':([3,19,25,29,37,43,],[8,-7,-6,-10,-9,-8,]),',':([3,4,10,16,19,25,26,29,37,39,41,43,46,50,52,],[9,15,20,27,-7,-6,36,-10,-7,45,45,-8,49,-18,-17,]),'RBRACKET':([3,16,19,25,29,37,39,41,43,50,52,],[10,26,-7,-6,-10,-7,44,47,-8,-18,-17,]),'PLOT':([3,8,19,25,29,37,43,],[11,11,-7,-6,-10,-9,-8,]),'BAR':([3,8,19,25,29,37,43,],[12,12,-7,-6,-10,-9,-8,]),'STACKBAR':([3,8,19,25,29,37,43,],[13,13,-7,-6,-10,-9,-8,]),'HIGHLIGHT':([3,8,19,25,29,37,43,],[14,14,-7,-6,-10,-9,-8,]),'}':([7,18,30,32,38,42,44,47,],[17,28,-11,-12,-16,-15,-13,-14,]),'WIDTH':([11,12,13,],[21,22,23,]),'INTEGER':([14,24,],[24,35,]),'DRAW_STYLE':([21,22,33,34,35,45,49,],[31,31,40,40,31,48,51,]),'COLOR':([31,40,48,51,],[38,46,50,52,]),}
 
 _lr_action = {}
 for _k, _v in _lr_action_items.items():
@@ -17,7 +17,7 @@ for _k, _v in _lr_action_items.items():
       _lr_action[_x][_k] = _y
 del _lr_action_items
 
-_lr_goto_items = {'program':([0,],[1,]),'command':([0,1,],[2,6,]),'fields':([0,1,5,],[3,3,10,]),'display':([7,],[11,]),'style':([20,21,30,],[25,27,36,]),'multi_style':([28,29,],[33,35,]),}
+_lr_goto_items = {'program':([0,],[1,]),'command':([0,1,],[2,6,]),'fields':([0,1,5,],[3,3,16,]),'display':([3,8,],[7,18,]),'style':([21,22,35,],[30,32,42,]),'multi_style':([33,34,],[39,41,]),}
 
 _lr_goto = {}
 for _k, _v in _lr_goto_items.items():
@@ -27,18 +27,22 @@ for _k, _v in _lr_goto_items.items():
 del _lr_goto_items
 _lr_productions = [
   ("S' -> program","S'",1,None,None,None),
-  ('program -> command','program',1,'p_program','plt',168),
-  ('program -> program command','program',2,'p_program','plt',169),
-  ('command -> fields { display }','command',4,'p_command','plt',174),
-  ('fields -> FIELDNAME , FIELDNAME','fields',3,'p_fields','plt',194),
-  ('fields -> fields , FIELDNAME','fields',3,'p_fields','plt',195),
-  ('fields -> LBRACKET fields RBRACKET , FIELDNAME','fields',5,'p_fields','plt',196),
-  ('display -> PLOT WIDTH style','display',3,'p_display','plt',212),
-  ('display -> BAR WIDTH style','display',3,'p_display','plt',213),
-  ('display -> BAR WIDTH LBRACKET multi_style RBRACKET','display',5,'p_display','plt',214),
-  ('display -> STACKBAR WIDTH LBRACKET multi_style RBRACKET','display',5,'p_display','plt',215),
-  ('display -> HIGHLIGHT INTEGER INTEGER style','display',4,'p_display','plt',216),
-  ('style -> DRAW_STYLE COLOR','style',2,'p_style','plt',231),
-  ('multi_style -> DRAW_STYLE COLOR , DRAW_STYLE COLOR','multi_style',5,'p_multi_style','plt',237),
-  ('multi_style -> multi_style , DRAW_STYLE COLOR','multi_style',4,'p_multi_style','plt',238),
+  ('program -> command','program',1,'p_program','plt',177),
+  ('program -> program command','program',2,'p_program','plt',178),
+  ('command -> fields display }','command',3,'p_error_command','plt',183),
+  ('command -> fields { display','command',3,'p_error_command','plt',184),
+  ('command -> fields { display }','command',4,'p_command','plt',203),
+  ('fields -> FIELDNAME , FIELDNAME','fields',3,'p_fields','plt',235),
+  ('fields -> fields , FIELDNAME','fields',3,'p_fields','plt',236),
+  ('fields -> LBRACKET fields RBRACKET , FIELDNAME','fields',5,'p_fields','plt',237),
+  ('fields -> LBRACKET fields , FIELDNAME','fields',4,'p_fields_error','plt',253),
+  ('fields -> fields RBRACKET , FIELDNAME','fields',4,'p_fields_error','plt',254),
+  ('display -> PLOT WIDTH style','display',3,'p_display','plt',270),
+  ('display -> BAR WIDTH style','display',3,'p_display','plt',271),
+  ('display -> BAR WIDTH LBRACKET multi_style RBRACKET','display',5,'p_display','plt',272),
+  ('display -> STACKBAR WIDTH LBRACKET multi_style RBRACKET','display',5,'p_display','plt',273),
+  ('display -> HIGHLIGHT INTEGER INTEGER style','display',4,'p_display','plt',274),
+  ('style -> DRAW_STYLE COLOR','style',2,'p_style','plt',289),
+  ('multi_style -> DRAW_STYLE COLOR , DRAW_STYLE COLOR','multi_style',5,'p_multi_style','plt',295),
+  ('multi_style -> multi_style , DRAW_STYLE COLOR','multi_style',4,'p_multi_style','plt',296),
 ]

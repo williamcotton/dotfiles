@@ -61,30 +61,83 @@ parser.add_argument("--debug", action="store_true", help="Print commands and exi
 args = parser.parse_args()
 
 #
-# ERROR IMAGE
+# ERROR PRINTING
 #
 
-# Create a new image with a transparent background
 error_image = Image.new("RGBA", (1000, 40), (0, 0, 0, 0))
-
-# Draw a red line on the image
 draw = ImageDraw.Draw(error_image)
-draw.line((0, 20, 400, 20), fill="red", width=1)
-draw.line((600, 20, 1000, 20), fill="red", width=1)
-
-# Add the text "Syntax Error" in the middle of the red bar
-font_path = "/System/Library/Fonts/SFNS.ttf"
-font = ImageFont.truetype(font_path, 25)
-bbox = font.getbbox("Syntax Error")
-text_width = bbox[2] - bbox[0]
-text_height = bbox[3] - bbox[1]
-text_x = (1000 - text_width) // 2
-text_y = (30 - text_height) // 2
-draw.text((text_x, text_y), "Syntax Error", font=font, fill="red")
-
-# Save the image to a buffer
+draw.line((0, 20, 1000, 20), fill="red", width=1)
 error_image_buffer = BytesIO()
 error_image.save(error_image_buffer, format="PNG")
+
+
+def underline_error(code, token_value, token_pos):
+    # Search for the token in the code
+    match = re.search(re.escape(token_value), code[token_pos:])
+    if match:
+        start_index = token_pos + match.start()
+        end_index = token_pos + match.end()
+
+        # Split the code into lines
+        lines = code.split("\n")
+
+        # Find the line number of the token
+        line_number = 1
+        for i, line in enumerate(lines):
+            if start_index >= len(line):
+                start_index -= len(line) + 1
+                end_index -= len(line) + 1
+                line_number += 1
+            else:
+                break
+
+        # Underline the token in red
+        line = lines[line_number - 1]
+        underline = (
+            line[:start_index]
+            + "\033[91m"  # red
+            + "\033[4m"  # underline
+            + token_value
+            + "\033[0m"  # reset
+            + "\033[0m"  # reset
+            + line[end_index:]
+        )
+        lines[line_number - 1] = underline
+
+        # Print the code with the underlined token and the entire line
+        return "\n".join(lines) + "\n"
+    else:
+        return "Error: could not find token '{}' in code".format(token_value)
+
+
+## error.py ###################################################################
+error_str: sourcetypes.python = """#!/usr/bin/env python3
+
+import sys
+from PIL import Image, ImageDraw
+from io import BytesIO
+
+error_image = Image.new("RGBA", (1000, 40), (0, 0, 0, 0))
+draw = ImageDraw.Draw(error_image)
+draw.line((0, 20, 1000, 20), fill="red", width=1)
+error_image_buffer = BytesIO()
+error_image.save(error_image_buffer, format="PNG")
+sys.stdout.buffer.write(error_image_buffer.getvalue())
+sys.exit(1)
+"""
+
+
+def error_message_and_exit(code, value, message, lexer_start):
+    sys.stderr.write(underline_error(code, value, lexer_start))
+    sys.stderr.write("\n")
+    sys.stderr.write(message)
+    sys.stderr.write("\n\n")
+    if args.py:
+        print(error_str)
+    else:
+        sys.stdout.buffer.write(error_image_buffer.getvalue())
+    exit(1)
+
 
 #
 # INTERMEDIARY DATA STRUCTURES
@@ -107,7 +160,12 @@ color_names = ["red", "green", "blue", "orange", "yellow", "black"]
 draw_styles = ["solid", "dashed", "dotted"]
 
 # Define the reserved words
-reserved = {"plot": "PLOT", "bar": "BAR", "stackbar": "STACKBAR", "highlight": "HIGHLIGHT"}
+reserved = {
+    "plot": "PLOT",
+    "bar": "BAR",
+    "stackbar": "STACKBAR",
+    "highlight": "HIGHLIGHT",
+}
 
 reserved.update({color: "COLOR" for color in color_names})
 reserved.update({draw_style: "DRAW_STYLE" for draw_style in draw_styles})
@@ -133,13 +191,16 @@ t_WIDTH = r"\d+px"
 
 t_INTEGER = r"\d+"
 
+
 def t_FIELDNAME(t):
     r"[a-zA-Z_][a-zA-Z0-9_\/]*"  # field names must start with a letter or underscore
     if t.lexer.start_fields != True or t.lexer.fields_processed == True:
         t.type = reserved.get(t.value, "FIELDNAME")  # Check for reserved words
     return t
 
+
 t_ignore = " \t\n"  # ignore whitespace and newlines
+
 
 def t_error(t):
     print("Unknown token:", t.value)
@@ -153,13 +214,16 @@ def t_LBRACKET(t):
         t.lexer.start_fields = False
     return t
 
+
 def t_RBRACKET(t):
     r"\]"
     t.lexer.start_fields = False
     t.lexer.fields_processed = True
     return t
 
+
 literals = ["{", "}", ","]
+
 
 # Define the parser rules
 def p_program(p):
@@ -167,45 +231,66 @@ def p_program(p):
     | program command"""
     pass
 
+
 def p_error_command(p):
     """command : fields display '}'
     | fields '{' display"""
     code = args.plt
     if p[2] == "{":
-        message = "\nMissing '}'"
+        message = "Missing '}'"
         value = "{"
     else:
-        message = "\nMissing '{'"
+        message = "Missing '{'"
         value = "}"
-    sys.stderr.write(underline_error(code, value, code.rfind(value, 0, p.lexer.lexpos)))
-    sys.stderr.write(message)
-    sys.stderr.write("\n\n")
-    sys.stdout.buffer.write(error_image_buffer.getvalue())
+    error_message_and_exit(code, value, message, code.rfind(value, 0, p.lexer.lexpos))
     exit(1)
 
+
 command = {}
+
+
 def p_command(p):
     """command : fields '{' display '}'"""
-    command["plot_style_title"] = command['plot_style'].replace('_', ' ').replace('-', ' ').title()
-    if "y_fieldnames" in command:
-        command["fields_title"] = f"[{command['y_fieldnames']}, {command['x_fieldname']}]"
-        legend_names.extend([
-            field.replace("_", " ").replace("-", " ").title()
-            for field in command["y_fieldnames"]
-        ])
-        field_names.extend(command["y_fieldnames"])
-        del command["y_fieldname"]
-    else:
-        command["fields_title"] = f"[{command['y_fieldname']}, {command['x_fieldname']}]"
-        legend_names.append(
-            command['y_fieldname'].replace("_", " ").replace("-", " ").title()
-        )
-        if command['plot_style'] != "highlight":
-            field_names.append(command["y_fieldname"])
-    field_names.append(command["x_fieldname"])    
+    process_command(command)
     matplotlib_commands.append(command.copy())
     command.clear()
     pass
+
+
+def process_command(command):
+    process_command_plot_style_title(command)
+    process_command_fields(command)
+
+
+def process_command_plot_style_title(command):
+    command["plot_style_title"] = (
+        command["plot_style"].replace("_", " ").replace("-", " ").title()
+    )
+
+
+def process_command_fields(command):
+    if "y_fieldnames" in command:
+        command[
+            "fields_title"
+        ] = f"[{command['y_fieldnames']}, {command['x_fieldname']}]"
+        legend_names.extend(
+            [
+                field.replace("_", " ").replace("-", " ").title()
+                for field in command["y_fieldnames"]
+            ]
+        )
+        field_names.extend(command["y_fieldnames"])
+        del command["y_fieldname"]
+    else:
+        command[
+            "fields_title"
+        ] = f"[{command['y_fieldname']}, {command['x_fieldname']}]"
+        legend_names.append(
+            command["y_fieldname"].replace("_", " ").replace("-", " ").title()
+        )
+        if command["plot_style"] != "highlight":
+            field_names.append(command["y_fieldname"])
+    field_names.append(command["x_fieldname"])
 
 
 def p_fields(p):
@@ -226,6 +311,20 @@ def p_fields(p):
     pass
 
 
+def p_fields_error(p):
+    """fields : LBRACKET fields ',' FIELDNAME
+    | fields RBRACKET ',' FIELDNAME"""
+    code = args.plt
+    if p[1] == "[":
+        message = "Missing ']'"
+        value = "["
+    else:
+        message = "Missing '['"
+        value = "]"
+    error_message_and_exit(code, value, message, code.rfind(value, 0, p.lexer.lexpos))
+    exit(1)
+
+
 def p_display(p):
     """display : PLOT WIDTH style
     | BAR WIDTH style
@@ -241,7 +340,7 @@ def p_display(p):
     if p[1] == "highlight":
         command.update({"start": int(p[2]), "end": int(p[3])})
     else:
-        command.update({ "width": int(p[2][:-2]) })
+        command.update({"width": int(p[2][:-2])})
     pass
 
 
@@ -276,42 +375,9 @@ def p_multi_style(p):
 
     pass
 
-def underline_error(code, token_value, token_pos):
-    # Search for the token in the code
-    match = re.search(re.escape(token_value), code[token_pos:])
-    if match:
-        start_index = token_pos + match.start()
-        end_index = token_pos + match.end()
-
-        # Split the code into lines
-        lines = code.split("\n")
-
-        # Find the line number of the token
-        line_number = 1
-        for i, line in enumerate(lines):
-            if start_index >= len(line):
-                start_index -= len(line) + 1
-                end_index -= len(line) + 1
-                line_number += 1
-            else:
-                break
-
-        # Underline the token in red
-        line = lines[line_number - 1]
-        underline = line[:start_index] + "\033[91m" + "\033[4m" + token_value + "\033[0m" + "\033[0m" + line[end_index:]
-        lines[line_number - 1] = underline
-
-        # Print the code with the underlined token and the entire line
-        return "\n".join(lines) + "\n"
-    else:
-        return "Error: could not find token '{}' in code".format(token_value)
 
 def p_error(p):
-    sys.stderr.write("\nSyntax error:\n")
-    sys.stderr.write("\n" + str(p) + "\n")
-    sys.stderr.write("\n" + underline_error(args.plt, p.value, p.lexpos) + "\n")
-    sys.stdout.buffer.write(error_image_buffer.getvalue())
-    exit(1)
+    error_message_and_exit(args.plt, p.value, f"Unknown token '{p.value}'", p.lexpos)
 
 
 # Build the lexer and parser
@@ -475,7 +541,6 @@ trans = transforms.blended_transform_factory(ax.transData, ax.transAxes)
 rect = mpatches.Rectangle(({{ command['start'] }}, 0), width={{ command['end'] - command['start'] }}, height=1, transform=trans, color='{{ command['color'] }}', alpha=0.5)
 ax.add_patch(rect)
 """
-###############################################################################
 
 # Create a dictionary with the template string and name
 templates = {
@@ -492,7 +557,7 @@ env = Environment(loader=DictLoader(templates))
 
 # Render the template with the data
 output = env.get_template("template.py").render(
-    matplotlib_commands=matplotlib_commands, 
+    matplotlib_commands=matplotlib_commands,
     legend_names=legend_names,
     field_names=field_names,
 )
