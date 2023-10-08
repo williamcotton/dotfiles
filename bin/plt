@@ -235,7 +235,7 @@ def p_program(p):
 def p_error_command(p):
     """command : fields display '}'
     | fields '{' display"""
-    code = args.plt
+    code = p.lexer.lexdata
     if p[2] == "{":
         message = "Missing '}'"
         value = "{"
@@ -243,7 +243,6 @@ def p_error_command(p):
         message = "Missing '{'"
         value = "}"
     error_message_and_exit(code, value, message, code.rfind(value, 0, p.lexer.lexpos))
-    exit(1)
 
 
 command = {}
@@ -251,15 +250,11 @@ command = {}
 
 def p_command(p):
     """command : fields '{' display '}'"""
-    process_command(command)
+    process_command_plot_style_title(command)
+    process_command_fields(command)
     matplotlib_commands.append(command.copy())
     command.clear()
     pass
-
-
-def process_command(command):
-    process_command_plot_style_title(command)
-    process_command_fields(command)
 
 
 def process_command_plot_style_title(command):
@@ -314,7 +309,7 @@ def p_fields(p):
 def p_fields_error(p):
     """fields : LBRACKET fields ',' FIELDNAME
     | fields RBRACKET ',' FIELDNAME"""
-    code = args.plt
+    code = p.lexer.lexdata
     if p[1] == "[":
         message = "Missing ']'"
         value = "["
@@ -322,7 +317,21 @@ def p_fields_error(p):
         message = "Missing '['"
         value = "]"
     error_message_and_exit(code, value, message, code.rfind(value, 0, p.lexer.lexpos))
-    exit(1)
+
+
+# Define the parser lambdas for "highlight" and "base"
+highlight_parser = lambda p: {"start": int(p[2]), "end": int(p[3])}
+base_parser = lambda p: {"width": int(p[2][:-2])}
+
+# Define the templates dictionary based on the jinja_templates dictionary
+parsers = {
+    "base": {"parser": base_parser},
+    "plot": {"parser": base_parser},
+    "bar": {"parser": base_parser},
+    "multi_bar": {"parser": base_parser},
+    "multi_stackbar": {"parser": base_parser},
+    "highlight": {"parser": highlight_parser},
+}
 
 
 def p_display(p):
@@ -331,16 +340,10 @@ def p_display(p):
     | BAR WIDTH LBRACKET multi_style RBRACKET
     | STACKBAR WIDTH LBRACKET multi_style RBRACKET
     | HIGHLIGHT INTEGER INTEGER style"""
-    multi = True if p[3] == "[" else False
-    plot_template_prefix = p[1]
-    if multi:
-        plot_template_prefix = "multi_" + plot_template_prefix
+    plot_template_prefix = "multi_" + p[1] if p[3] == "[" else p[1]
     template_name = plot_template_prefix + "_template.py"
     command.update({"plot_style": p[1], "template_name": template_name})
-    if p[1] == "highlight":
-        command.update({"start": int(p[2]), "end": int(p[3])})
-    else:
-        command.update({"width": int(p[2][:-2])})
+    command.update(parsers[plot_template_prefix]["parser"](p))
     pass
 
 
@@ -421,7 +424,7 @@ if args.debug:
 #
 
 ## template.py ################################################################
-template_str: sourcetypes.python = """#!/usr/bin/env python3
+base_template_str: sourcetypes.python = """#!/usr/bin/env python3
 
 import csv
 import sys
@@ -542,21 +545,27 @@ rect = mpatches.Rectangle(({{ command['start'] }}, 0), width={{ command['end'] -
 ax.add_patch(rect)
 """
 
-# Create a dictionary with the template string and name
+# Define the templates dictionary based on the jinja_templates dictionary
 templates = {
-    "template.py": template_str,
-    "plot_template.py": plot_template_str,
-    "bar_template.py": bar_template_str,
-    "multi_bar_template.py": multi_bar_template_str,
-    "multi_stackbar_template.py": multi_stackbar_template_str,
-    "highlight_template.py": highlight_template_str,
+    "base": {"template": base_template_str},
+    "plot": {"template": plot_template_str},
+    "bar": {"template": bar_template_str},
+    "multi_bar": {"template": multi_bar_template_str},
+    "multi_stackbar": {"template": multi_stackbar_template_str},
+    "highlight": {"template": highlight_template_str},
 }
 
+# Convert the templates dictionary to the jinja_templates structure
+jinja_templates = {}
+for name, template in templates.items():
+    jinja_templates[name + "_template.py"] = template["template"]
+
+
 # Create a Jinja environment with the DictLoader
-env = Environment(loader=DictLoader(templates))
+env = Environment(loader=DictLoader(jinja_templates))
 
 # Render the template with the data
-output = env.get_template("template.py").render(
+output = env.get_template("base_template.py").render(
     matplotlib_commands=matplotlib_commands,
     legend_names=legend_names,
     field_names=field_names,
