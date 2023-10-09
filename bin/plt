@@ -43,6 +43,7 @@ from jinja2 import Environment, DictLoader
 from collections import OrderedDict
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
+import importlib.util
 
 #
 # COMMAND LINE INTERFACE
@@ -153,6 +154,45 @@ legend_names = []
 field_names = []
 
 #
+# PLUGINS
+#
+
+# Define the directory paths for the plugin templates
+template_dirs = [
+    os.path.expanduser("~/dotfiles/plt/"),
+    os.path.expanduser("~/plt/"),
+]
+
+plugins = {}
+
+# Iterate over the files in the template directories
+for template_dir in template_dirs:
+    # Check if the directory exists
+    if os.path.isdir(template_dir):
+        for filename in os.listdir(template_dir):
+            # Check if the file ends with "_template.py"
+            if filename.endswith("_template.py"):
+                # Extract the plugin name from the file name
+                plugin_name = filename[: -len("_template.py")]
+                # Load the plugin module dynamically
+                spec = importlib.util.spec_from_file_location(
+                    plugin_name, os.path.join(template_dir, filename)
+                )
+                plugin_module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(plugin_module)
+                # Check if the plugin module has a "parser" attribute
+                plugins[plugin_name] = (
+                    {
+                        "parser": plugin_module.parser,
+                        "template": plugin_module.template_str,
+                    }
+                    if hasattr(plugin_module, "parser")
+                    else {
+                        "template": plugin_module.template_str,
+                    }
+                )
+
+#
 # LANGUAGE DEFINITION
 #
 
@@ -160,12 +200,11 @@ color_names = ["red", "green", "blue", "orange", "yellow", "black"]
 draw_styles = ["solid", "dashed", "dotted"]
 
 # Define the reserved words
-reserved = {
-    "plot": "PLOT",
-    "bar": "BAR",
-    "stackbar": "STACKBAR",
+plot_reserved = {
     "highlight": "HIGHLIGHT",
 }
+
+reserved = plot_reserved.copy()
 
 reserved.update({color: "COLOR" for color in color_names})
 reserved.update({draw_style: "DRAW_STYLE" for draw_style in draw_styles})
@@ -173,10 +212,13 @@ reserved.update({draw_style: "DRAW_STYLE" for draw_style in draw_styles})
 # Define the lexer tokens
 tokens = (
     "FIELDNAME",
+    "PLOTNAME",
     "WIDTH",
     "INTEGER",
     "LBRACKET",
     "RBRACKET",
+    "LBRACE",
+    "RBRACE",
 ) + tuple(set(reserved.values()))
 
 # Define the lexer rules
@@ -187,15 +229,36 @@ color_names_regex = "|".join(color_names)
 hex_color_regex = r"\#\w{6}|\#\w{3}"
 t_COLOR = f"({color_names_regex}|{hex_color_regex})"
 
-t_WIDTH = r"\d+px"
 
-t_INTEGER = r"\d+"
+def t_WIDTH(t):
+    r"\d+px"
+    if t.lexer.start_attributes == True:
+        t.type = "PLOTNAME"
+    return t
+
+
+def t_INTEGER(t):
+    r"\d+"
+    if t.lexer.start_attributes == True:
+        t.type = "PLOTNAME"
+    return t
 
 
 def t_FIELDNAME(t):
     r"[a-zA-Z_][a-zA-Z0-9_\/]*"  # field names must start with a letter or underscore
     if t.lexer.start_fields != True or t.lexer.fields_processed == True:
         t.type = reserved.get(t.value, "FIELDNAME")  # Check for reserved words
+    if t.lexer.start_display == True:
+        t.type = reserved.get(t.value, "PLOTNAME")  # Check for reserved words
+    if t.lexer.start_attributes == True:
+        t.type = "PLOTNAME"
+    return t
+
+
+def t_PLOTNAME(t):
+    r"[a-zA-Z_][a-zA-Z0-9_\-\/]*"  # plot names must start with a letter or underscore
+    # if t.lexer.start_display != True:
+    #     t.type = plot_reserved.get(t.value, "FIELDNAME")  # Check for reserved words
     return t
 
 
@@ -222,7 +285,46 @@ def t_RBRACKET(t):
     return t
 
 
-literals = ["{", "}", ","]
+def t_LBRACE(t):
+    r"\{"
+    t.lexer.start_display = True
+    return t
+
+
+def t_RBRACE(t):
+    r"\}"
+    t.lexer.start_display = False
+    return t
+
+
+literals = [","]
+
+
+# Define the parser lambdas for "highlight" and "base"
+def highlight_parser(p):
+    return {"start": int(p[2]), "end": int(p[3])}
+
+
+def base_parser(p):
+    return {"width": int(p[2][:-2])}
+
+
+# Define the templates dictionary based on the jinja_templates dictionary
+parsers = {
+    "base": {"parser": base_parser},
+    "plot": {"parser": base_parser},
+    "bar": {"parser": base_parser},
+    "multi_bar": {"parser": base_parser},
+    "multi_stackbar": {"parser": base_parser},
+    "highlight": {"parser": highlight_parser},
+}
+
+# Add the base_parser to any plugins that don't have a parser defined
+for plugin_name, plugin_data in plugins.items():
+    if "parser" not in plugin_data:
+        plugin_data["parser"] = base_parser
+
+parsers.update(plugins)
 
 
 # Define the parser rules
@@ -233,8 +335,8 @@ def p_program(p):
 
 
 def p_error_command(p):
-    """command : fields display '}'
-    | fields '{' display"""
+    """command : fields display RBRACE
+    | fields LBRACE display"""
     code = p.lexer.lexdata
     if p[2] == "{":
         message = "Missing '}'"
@@ -249,11 +351,25 @@ command = {}
 
 
 def p_command(p):
-    """command : fields '{' display '}'"""
+    """command : fields LBRACE display RBRACE"""
     process_command_plot_style_title(command)
     process_command_fields(command)
+    process_command_attributes(command)
     matplotlib_commands.append(command.copy())
     command.clear()
+    p.lexer.start_fields = False
+    p.lexer.fields_processed = False
+    p.lexer.start_display = False
+    p.lexer.start_attributes = False
+    pass
+
+
+def process_command_attributes(command):
+    if "attributes" in command:
+        command.update(
+            parsers[command["plot_style"]]["parser"]([0] + command["attributes"])
+        )
+
     pass
 
 
@@ -319,31 +435,41 @@ def p_fields_error(p):
     error_message_and_exit(code, value, message, code.rfind(value, 0, p.lexer.lexpos))
 
 
-# Define the parser lambdas for "highlight" and "base"
-highlight_parser = lambda p: {"start": int(p[2]), "end": int(p[3])}
-base_parser = lambda p: {"width": int(p[2][:-2])}
-
-# Define the templates dictionary based on the jinja_templates dictionary
-parsers = {
-    "base": {"parser": base_parser},
-    "plot": {"parser": base_parser},
-    "bar": {"parser": base_parser},
-    "multi_bar": {"parser": base_parser},
-    "multi_stackbar": {"parser": base_parser},
-    "highlight": {"parser": highlight_parser},
-}
-
-
 def p_display(p):
-    """display : PLOT WIDTH style
-    | BAR WIDTH style
-    | BAR WIDTH LBRACKET multi_style RBRACKET
-    | STACKBAR WIDTH LBRACKET multi_style RBRACKET
-    | HIGHLIGHT INTEGER INTEGER style"""
-    plot_template_prefix = "multi_" + p[1] if p[3] == "[" else p[1]
-    template_name = plot_template_prefix + "_template.py"
-    command.update({"plot_style": p[1], "template_name": template_name})
-    command.update(parsers[plot_template_prefix]["parser"](p))
+    """display : PLOTNAME WIDTH LBRACKET multi_style RBRACKET
+    | HIGHLIGHT INTEGER INTEGER style
+    | PLOTNAME WIDTH style
+    | PLOTNAME
+    | display PLOTNAME"""
+    if len(p) == 2:
+        if p[1] not in parsers:
+            error_message_and_exit(
+                p.lexer.lexdata,
+                p[1],
+                f"Unknown plot style '{p[1]}'",
+                p.lexer.lexdata.rfind(p[1], 0, p.lexer.lexpos),
+            )
+        p.lexer.start_attributes = True
+        template_name = p[1] + "_template.py"
+        command.update({"plot_style": p[1], "template_name": template_name})
+        p[0] = [p[1]]
+        command.update({"attributes": p[0]})
+    else:
+        if p.lexer.start_attributes == True:
+            p[0] = p[1] + [p[2]]
+            command.update({"attributes": p[0]})
+        else:
+            plot_template_prefix = "multi_" + p[1] if p[3] == "[" else p[1]
+            if plot_template_prefix not in parsers:
+                error_message_and_exit(
+                    p.lexer.lexdata,
+                    p[1],
+                    f"Unknown plot style '{p[1]}'",
+                    p.lexer.lexdata.rfind(p[1], 0, p.lexer.lexpos),
+                )
+            template_name = plot_template_prefix + "_template.py"
+            command.update({"plot_style": p[1], "template_name": template_name})
+            command.update(parsers[plot_template_prefix]["parser"](p))
     pass
 
 
@@ -380,7 +506,9 @@ def p_multi_style(p):
 
 
 def p_error(p):
-    error_message_and_exit(args.plt, p.value, f"Unknown token '{p.value}'", p.lexpos)
+    error_message_and_exit(
+        args.plt, p.value, f"Unknown token '{p.value} {str(p)}'", p.lexpos
+    )
 
 
 # Build the lexer and parser
@@ -395,6 +523,8 @@ parser = yacc.yacc()
 if args.plt:
     # Reset the lexer
     lexer.start_fields = False
+    lexer.start_display = False
+    lexer.start_attributes = False
     lexer.fields_processed = False
     # Parse the plt language string using the lexer and parser
     parser = yacc.yacc()
@@ -504,14 +634,19 @@ plt.savefig(sys.stdout.buffer, format='png')
 plot_template_str: sourcetypes.python = """
 y_{{ command['y_fieldname'] }}_value = [float(y) for y in data['{{ command['y_fieldname'] }}']]
 width = 0.02
-ax.plot(x_value, y_{{ command['y_fieldname'] }}_value, color='{{ command['color'] }}', linewidth={{ command['width'] }})
+ax.plot(x_value, y_{{ command['y_fieldname'] }}_value, color='{{ command['color'] }}', linestyle='{{ command['draw_style'] }}', linewidth={{ command['width'] }})
 """
 
 ### bar_template.py ###########################################################
 bar_template_str: sourcetypes.python = """
 y_{{ command['y_fieldname'] }}_value = [float(y) for y in data['{{ command['y_fieldname'] }}']]
-width = 0.02
-ax.bar(x_value, y_{{ command['y_fieldname'] }}_value, color='{{ command['color'] }}', width={{ command['width'] / 50 }}, alpha=0.5)
+    if styles[index]['draw_style'] == 'solid':
+        hatch = ''
+    if styles[index]['draw_style'] == 'dashed':
+        hatch = '/'
+    if styles[index]['draw_style'] == 'dotted':
+        hatch = 'o'
+ax.bar(x_value, y_{{ command['y_fieldname'] }}_value, hatch=hatch, color='{{ command['color'] }}', width={{ command['width'] / 50 }}, alpha=0.5)
 """
 
 ## multi_bar_template.py ######################################################
@@ -523,7 +658,13 @@ ax.set_xticks(x + width, x_value)
 multiplier = 0
 for index, field in enumerate({{ command['y_fieldnames'] }}):
     offset = width * multiplier
-    rects = ax.bar(x + offset, y_values[index], width, color=styles[index]['color'], linewidth=1)
+    if styles[index]['draw_style'] == 'solid':
+        hatch = ''
+    if styles[index]['draw_style'] == 'dashed':
+        hatch = '/'
+    if styles[index]['draw_style'] == 'dotted':
+        hatch = 'o'
+    rects = ax.bar(x + offset, y_values[index], width, hatch=hatch, color=styles[index]['color'], linewidth=1)
     multiplier += 1
 """
 
@@ -534,7 +675,13 @@ styles = {{ command['styles'] }}
 width = {{ command['width'] / 50 }}
 bottom = np.zeros(3)
 for index, field in enumerate({{ command['y_fieldnames'] }}):
-    rects = ax.bar(x_value, y_values[index], width, color=styles[index]['color'], bottom=bottom)
+    if styles[index]['draw_style'] == 'solid':
+        hatch = ''
+    if styles[index]['draw_style'] == 'dashed':
+        hatch = '/'
+    if styles[index]['draw_style'] == 'dotted':
+        hatch = 'o'
+    rects = ax.bar(x_value, y_values[index], width, hatch=hatch, color=styles[index]['color'], bottom=bottom)
     bottom += y_values[index]
 """
 
@@ -554,6 +701,8 @@ templates = {
     "multi_stackbar": {"template": multi_stackbar_template_str},
     "highlight": {"template": highlight_template_str},
 }
+
+templates.update(plugins)
 
 # Convert the templates dictionary to the jinja_templates structure
 jinja_templates = {}
