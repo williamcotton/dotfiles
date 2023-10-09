@@ -277,6 +277,11 @@ imgc() {
   tee >(imgcat "$@") >(impbcopy -) > /dev/null
 }
 
+tc() {
+  touch "$@"
+  code "$@"
+}
+
 htmltopdf() {
   local html
   local size="A4"
