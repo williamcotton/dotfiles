@@ -1,13 +1,17 @@
 Created by PLY version 3.11 (http://www.dabeaz.com/ply)
 
+Unused terminals:
+
+    STRING
+
 Grammar
 
 Rule 0     S' -> program
 Rule 1     program -> command
 Rule 2     program -> program command
-Rule 3     command -> fields display RBRACE
-Rule 4     command -> fields LBRACE display
-Rule 5     command -> fields LBRACE display RBRACE
+Rule 3     command -> fields LBRACE display RBRACE
+Rule 4     command -> fields display RBRACE
+Rule 5     command -> fields LBRACE display
 Rule 6     fields -> FIELDNAME , FIELDNAME
 Rule 7     fields -> fields , FIELDNAME
 Rule 8     fields -> LBRACKET fields RBRACKET , FIELDNAME
@@ -16,34 +20,43 @@ Rule 10    fields -> fields RBRACKET , FIELDNAME
 Rule 11    display -> PLOTNAME WIDTH LBRACKET multi_style RBRACKET
 Rule 12    display -> HIGHLIGHT INTEGER INTEGER style
 Rule 13    display -> PLOTNAME WIDTH style
-Rule 14    display -> PLOTNAME
-Rule 15    display -> display PLOTNAME
-Rule 16    style -> DRAW_STYLE COLOR
-Rule 17    multi_style -> DRAW_STYLE COLOR , DRAW_STYLE COLOR
-Rule 18    multi_style -> multi_style , DRAW_STYLE COLOR
+Rule 14    display -> PLOTNAME arguments
+Rule 15    arguments -> arguments argument
+Rule 16    arguments -> argument
+Rule 17    argument -> WIDTH
+Rule 18    argument -> DRAW_STYLE
+Rule 19    argument -> COLOR
+Rule 20    argument -> PLOTNAME
+Rule 21    argument -> INTEGER
+Rule 22    style -> DRAW_STYLE COLOR
+Rule 23    multi_style -> DRAW_STYLE COLOR , DRAW_STYLE COLOR
+Rule 24    multi_style -> multi_style , DRAW_STYLE COLOR
 
 Terminals, with rules where they appear
 
-,                    : 6 7 8 9 10 17 18
-COLOR                : 16 17 17 18
-DRAW_STYLE           : 16 17 17 18
+,                    : 6 7 8 9 10 23 24
+COLOR                : 19 22 23 23 24
+DRAW_STYLE           : 18 22 23 23 24
 FIELDNAME            : 6 6 7 8 9 10
 HIGHLIGHT            : 12
-INTEGER              : 12 12
-LBRACE               : 4 5
+INTEGER              : 12 12 21
+LBRACE               : 3 5
 LBRACKET             : 8 9 11
-PLOTNAME             : 11 13 14 15
-RBRACE               : 3 5
+PLOTNAME             : 11 13 14 20
+RBRACE               : 3 4
 RBRACKET             : 8 10 11
-WIDTH                : 11 13
+STRING               : 
+WIDTH                : 11 13 17
 error                : 
 
 Nonterminals, with rules where they appear
 
+argument             : 15 16
+arguments            : 14 15
 command              : 1 2
-display              : 3 4 5 15
+display              : 3 4 5
 fields               : 3 4 5 7 8 9 10
-multi_style          : 11 18
+multi_style          : 11 24
 program              : 2 0
 style                : 12 13
 
@@ -54,9 +67,9 @@ state 0
     (0) S' -> . program
     (1) program -> . command
     (2) program -> . program command
-    (3) command -> . fields display RBRACE
-    (4) command -> . fields LBRACE display
-    (5) command -> . fields LBRACE display RBRACE
+    (3) command -> . fields LBRACE display RBRACE
+    (4) command -> . fields display RBRACE
+    (5) command -> . fields LBRACE display
     (6) fields -> . FIELDNAME , FIELDNAME
     (7) fields -> . fields , FIELDNAME
     (8) fields -> . LBRACKET fields RBRACKET , FIELDNAME
@@ -74,9 +87,9 @@ state 1
 
     (0) S' -> program .
     (2) program -> program . command
-    (3) command -> . fields display RBRACE
-    (4) command -> . fields LBRACE display
-    (5) command -> . fields LBRACE display RBRACE
+    (3) command -> . fields LBRACE display RBRACE
+    (4) command -> . fields display RBRACE
+    (5) command -> . fields LBRACE display
     (6) fields -> . FIELDNAME , FIELDNAME
     (7) fields -> . fields , FIELDNAME
     (8) fields -> . LBRACKET fields RBRACKET , FIELDNAME
@@ -100,24 +113,23 @@ state 2
 
 state 3
 
-    (3) command -> fields . display RBRACE
-    (4) command -> fields . LBRACE display
-    (5) command -> fields . LBRACE display RBRACE
+    (3) command -> fields . LBRACE display RBRACE
+    (4) command -> fields . display RBRACE
+    (5) command -> fields . LBRACE display
     (7) fields -> fields . , FIELDNAME
     (10) fields -> fields . RBRACKET , FIELDNAME
     (11) display -> . PLOTNAME WIDTH LBRACKET multi_style RBRACKET
     (12) display -> . HIGHLIGHT INTEGER INTEGER style
     (13) display -> . PLOTNAME WIDTH style
-    (14) display -> . PLOTNAME
-    (15) display -> . display PLOTNAME
+    (14) display -> . PLOTNAME arguments
 
-    LBRACE          shift and go to state 8
+    LBRACE          shift and go to state 7
     ,               shift and go to state 9
     RBRACKET        shift and go to state 10
     PLOTNAME        shift and go to state 11
     HIGHLIGHT       shift and go to state 12
 
-    display                        shift and go to state 7
+    display                        shift and go to state 8
 
 state 4
 
@@ -152,68 +164,73 @@ state 6
 
 state 7
 
-    (3) command -> fields display . RBRACE
-    (15) display -> display . PLOTNAME
-
-    RBRACE          shift and go to state 15
-    PLOTNAME        shift and go to state 16
-
-
-state 8
-
-    (4) command -> fields LBRACE . display
-    (5) command -> fields LBRACE . display RBRACE
+    (3) command -> fields LBRACE . display RBRACE
+    (5) command -> fields LBRACE . display
     (11) display -> . PLOTNAME WIDTH LBRACKET multi_style RBRACKET
     (12) display -> . HIGHLIGHT INTEGER INTEGER style
     (13) display -> . PLOTNAME WIDTH style
-    (14) display -> . PLOTNAME
-    (15) display -> . display PLOTNAME
+    (14) display -> . PLOTNAME arguments
 
     PLOTNAME        shift and go to state 11
     HIGHLIGHT       shift and go to state 12
 
-    display                        shift and go to state 17
+    display                        shift and go to state 15
+
+state 8
+
+    (4) command -> fields display . RBRACE
+
+    RBRACE          shift and go to state 16
+
 
 state 9
 
     (7) fields -> fields , . FIELDNAME
 
-    FIELDNAME       shift and go to state 18
+    FIELDNAME       shift and go to state 17
 
 
 state 10
 
     (10) fields -> fields RBRACKET . , FIELDNAME
 
-    ,               shift and go to state 19
+    ,               shift and go to state 18
 
 
 state 11
 
     (11) display -> PLOTNAME . WIDTH LBRACKET multi_style RBRACKET
     (13) display -> PLOTNAME . WIDTH style
-    (14) display -> PLOTNAME .
+    (14) display -> PLOTNAME . arguments
+    (15) arguments -> . arguments argument
+    (16) arguments -> . argument
+    (17) argument -> . WIDTH
+    (18) argument -> . DRAW_STYLE
+    (19) argument -> . COLOR
+    (20) argument -> . PLOTNAME
+    (21) argument -> . INTEGER
 
     WIDTH           shift and go to state 20
-    RBRACE          reduce using rule 14 (display -> PLOTNAME .)
-    PLOTNAME        reduce using rule 14 (display -> PLOTNAME .)
-    FIELDNAME       reduce using rule 14 (display -> PLOTNAME .)
-    LBRACKET        reduce using rule 14 (display -> PLOTNAME .)
-    $end            reduce using rule 14 (display -> PLOTNAME .)
+    DRAW_STYLE      shift and go to state 23
+    COLOR           shift and go to state 24
+    PLOTNAME        shift and go to state 19
+    INTEGER         shift and go to state 25
 
+    arguments                      shift and go to state 21
+    argument                       shift and go to state 22
 
 state 12
 
     (12) display -> HIGHLIGHT . INTEGER INTEGER style
 
-    INTEGER         shift and go to state 21
+    INTEGER         shift and go to state 26
 
 
 state 13
 
     (6) fields -> FIELDNAME , . FIELDNAME
 
-    FIELDNAME       shift and go to state 22
+    FIELDNAME       shift and go to state 27
 
 
 state 14
@@ -223,44 +240,31 @@ state 14
     (7) fields -> fields . , FIELDNAME
     (10) fields -> fields . RBRACKET , FIELDNAME
 
-    RBRACKET        shift and go to state 23
-    ,               shift and go to state 24
+    RBRACKET        shift and go to state 28
+    ,               shift and go to state 29
 
 
 state 15
 
-    (3) command -> fields display RBRACE .
+    (3) command -> fields LBRACE display . RBRACE
+    (5) command -> fields LBRACE display .
 
-    FIELDNAME       reduce using rule 3 (command -> fields display RBRACE .)
-    LBRACKET        reduce using rule 3 (command -> fields display RBRACE .)
-    $end            reduce using rule 3 (command -> fields display RBRACE .)
+    RBRACE          shift and go to state 30
+    FIELDNAME       reduce using rule 5 (command -> fields LBRACE display .)
+    LBRACKET        reduce using rule 5 (command -> fields LBRACE display .)
+    $end            reduce using rule 5 (command -> fields LBRACE display .)
 
 
 state 16
 
-    (15) display -> display PLOTNAME .
+    (4) command -> fields display RBRACE .
 
-    RBRACE          reduce using rule 15 (display -> display PLOTNAME .)
-    PLOTNAME        reduce using rule 15 (display -> display PLOTNAME .)
-    FIELDNAME       reduce using rule 15 (display -> display PLOTNAME .)
-    LBRACKET        reduce using rule 15 (display -> display PLOTNAME .)
-    $end            reduce using rule 15 (display -> display PLOTNAME .)
+    FIELDNAME       reduce using rule 4 (command -> fields display RBRACE .)
+    LBRACKET        reduce using rule 4 (command -> fields display RBRACE .)
+    $end            reduce using rule 4 (command -> fields display RBRACE .)
 
 
 state 17
-
-    (4) command -> fields LBRACE display .
-    (5) command -> fields LBRACE display . RBRACE
-    (15) display -> display . PLOTNAME
-
-    FIELDNAME       reduce using rule 4 (command -> fields LBRACE display .)
-    LBRACKET        reduce using rule 4 (command -> fields LBRACE display .)
-    $end            reduce using rule 4 (command -> fields LBRACE display .)
-    RBRACE          shift and go to state 25
-    PLOTNAME        shift and go to state 16
-
-
-state 18
 
     (7) fields -> fields , FIELDNAME .
 
@@ -271,32 +275,142 @@ state 18
     HIGHLIGHT       reduce using rule 7 (fields -> fields , FIELDNAME .)
 
 
-state 19
+state 18
 
     (10) fields -> fields RBRACKET , . FIELDNAME
 
-    FIELDNAME       shift and go to state 26
+    FIELDNAME       shift and go to state 31
+
+
+state 19
+
+    (20) argument -> PLOTNAME .
+
+    WIDTH           reduce using rule 20 (argument -> PLOTNAME .)
+    DRAW_STYLE      reduce using rule 20 (argument -> PLOTNAME .)
+    COLOR           reduce using rule 20 (argument -> PLOTNAME .)
+    PLOTNAME        reduce using rule 20 (argument -> PLOTNAME .)
+    INTEGER         reduce using rule 20 (argument -> PLOTNAME .)
+    RBRACE          reduce using rule 20 (argument -> PLOTNAME .)
+    FIELDNAME       reduce using rule 20 (argument -> PLOTNAME .)
+    LBRACKET        reduce using rule 20 (argument -> PLOTNAME .)
+    $end            reduce using rule 20 (argument -> PLOTNAME .)
 
 
 state 20
 
     (11) display -> PLOTNAME WIDTH . LBRACKET multi_style RBRACKET
     (13) display -> PLOTNAME WIDTH . style
-    (16) style -> . DRAW_STYLE COLOR
+    (17) argument -> WIDTH .
+    (22) style -> . DRAW_STYLE COLOR
 
-    LBRACKET        shift and go to state 27
-    DRAW_STYLE      shift and go to state 29
+  ! shift/reduce conflict for LBRACKET resolved as shift
+  ! shift/reduce conflict for DRAW_STYLE resolved as shift
+    LBRACKET        shift and go to state 32
+    WIDTH           reduce using rule 17 (argument -> WIDTH .)
+    COLOR           reduce using rule 17 (argument -> WIDTH .)
+    PLOTNAME        reduce using rule 17 (argument -> WIDTH .)
+    INTEGER         reduce using rule 17 (argument -> WIDTH .)
+    RBRACE          reduce using rule 17 (argument -> WIDTH .)
+    FIELDNAME       reduce using rule 17 (argument -> WIDTH .)
+    $end            reduce using rule 17 (argument -> WIDTH .)
+    DRAW_STYLE      shift and go to state 34
 
-    style                          shift and go to state 28
+  ! DRAW_STYLE      [ reduce using rule 17 (argument -> WIDTH .) ]
+  ! LBRACKET        [ reduce using rule 17 (argument -> WIDTH .) ]
+
+    style                          shift and go to state 33
 
 state 21
 
-    (12) display -> HIGHLIGHT INTEGER . INTEGER style
+    (14) display -> PLOTNAME arguments .
+    (15) arguments -> arguments . argument
+    (17) argument -> . WIDTH
+    (18) argument -> . DRAW_STYLE
+    (19) argument -> . COLOR
+    (20) argument -> . PLOTNAME
+    (21) argument -> . INTEGER
 
-    INTEGER         shift and go to state 30
+    RBRACE          reduce using rule 14 (display -> PLOTNAME arguments .)
+    FIELDNAME       reduce using rule 14 (display -> PLOTNAME arguments .)
+    LBRACKET        reduce using rule 14 (display -> PLOTNAME arguments .)
+    $end            reduce using rule 14 (display -> PLOTNAME arguments .)
+    WIDTH           shift and go to state 36
+    DRAW_STYLE      shift and go to state 23
+    COLOR           shift and go to state 24
+    PLOTNAME        shift and go to state 19
+    INTEGER         shift and go to state 25
 
+    argument                       shift and go to state 35
 
 state 22
+
+    (16) arguments -> argument .
+
+    WIDTH           reduce using rule 16 (arguments -> argument .)
+    DRAW_STYLE      reduce using rule 16 (arguments -> argument .)
+    COLOR           reduce using rule 16 (arguments -> argument .)
+    PLOTNAME        reduce using rule 16 (arguments -> argument .)
+    INTEGER         reduce using rule 16 (arguments -> argument .)
+    RBRACE          reduce using rule 16 (arguments -> argument .)
+    FIELDNAME       reduce using rule 16 (arguments -> argument .)
+    LBRACKET        reduce using rule 16 (arguments -> argument .)
+    $end            reduce using rule 16 (arguments -> argument .)
+
+
+state 23
+
+    (18) argument -> DRAW_STYLE .
+
+    WIDTH           reduce using rule 18 (argument -> DRAW_STYLE .)
+    DRAW_STYLE      reduce using rule 18 (argument -> DRAW_STYLE .)
+    COLOR           reduce using rule 18 (argument -> DRAW_STYLE .)
+    PLOTNAME        reduce using rule 18 (argument -> DRAW_STYLE .)
+    INTEGER         reduce using rule 18 (argument -> DRAW_STYLE .)
+    RBRACE          reduce using rule 18 (argument -> DRAW_STYLE .)
+    FIELDNAME       reduce using rule 18 (argument -> DRAW_STYLE .)
+    LBRACKET        reduce using rule 18 (argument -> DRAW_STYLE .)
+    $end            reduce using rule 18 (argument -> DRAW_STYLE .)
+
+
+state 24
+
+    (19) argument -> COLOR .
+
+    WIDTH           reduce using rule 19 (argument -> COLOR .)
+    DRAW_STYLE      reduce using rule 19 (argument -> COLOR .)
+    COLOR           reduce using rule 19 (argument -> COLOR .)
+    PLOTNAME        reduce using rule 19 (argument -> COLOR .)
+    INTEGER         reduce using rule 19 (argument -> COLOR .)
+    RBRACE          reduce using rule 19 (argument -> COLOR .)
+    FIELDNAME       reduce using rule 19 (argument -> COLOR .)
+    LBRACKET        reduce using rule 19 (argument -> COLOR .)
+    $end            reduce using rule 19 (argument -> COLOR .)
+
+
+state 25
+
+    (21) argument -> INTEGER .
+
+    WIDTH           reduce using rule 21 (argument -> INTEGER .)
+    DRAW_STYLE      reduce using rule 21 (argument -> INTEGER .)
+    COLOR           reduce using rule 21 (argument -> INTEGER .)
+    PLOTNAME        reduce using rule 21 (argument -> INTEGER .)
+    INTEGER         reduce using rule 21 (argument -> INTEGER .)
+    RBRACE          reduce using rule 21 (argument -> INTEGER .)
+    FIELDNAME       reduce using rule 21 (argument -> INTEGER .)
+    LBRACKET        reduce using rule 21 (argument -> INTEGER .)
+    $end            reduce using rule 21 (argument -> INTEGER .)
+
+
+state 26
+
+    (12) display -> HIGHLIGHT INTEGER . INTEGER style
+
+    INTEGER         shift and go to state 37
+
+
+state 27
 
     (6) fields -> FIELDNAME , FIELDNAME .
 
@@ -307,32 +421,32 @@ state 22
     HIGHLIGHT       reduce using rule 6 (fields -> FIELDNAME , FIELDNAME .)
 
 
-state 23
+state 28
 
     (8) fields -> LBRACKET fields RBRACKET . , FIELDNAME
     (10) fields -> fields RBRACKET . , FIELDNAME
 
-    ,               shift and go to state 31
+    ,               shift and go to state 38
 
 
-state 24
+state 29
 
     (9) fields -> LBRACKET fields , . FIELDNAME
     (7) fields -> fields , . FIELDNAME
 
-    FIELDNAME       shift and go to state 32
+    FIELDNAME       shift and go to state 39
 
 
-state 25
+state 30
 
-    (5) command -> fields LBRACE display RBRACE .
+    (3) command -> fields LBRACE display RBRACE .
 
-    FIELDNAME       reduce using rule 5 (command -> fields LBRACE display RBRACE .)
-    LBRACKET        reduce using rule 5 (command -> fields LBRACE display RBRACE .)
-    $end            reduce using rule 5 (command -> fields LBRACE display RBRACE .)
+    FIELDNAME       reduce using rule 3 (command -> fields LBRACE display RBRACE .)
+    LBRACKET        reduce using rule 3 (command -> fields LBRACE display RBRACE .)
+    $end            reduce using rule 3 (command -> fields LBRACE display RBRACE .)
 
 
-state 26
+state 31
 
     (10) fields -> fields RBRACKET , FIELDNAME .
 
@@ -343,52 +457,81 @@ state 26
     HIGHLIGHT       reduce using rule 10 (fields -> fields RBRACKET , FIELDNAME .)
 
 
-state 27
+state 32
 
     (11) display -> PLOTNAME WIDTH LBRACKET . multi_style RBRACKET
-    (17) multi_style -> . DRAW_STYLE COLOR , DRAW_STYLE COLOR
-    (18) multi_style -> . multi_style , DRAW_STYLE COLOR
+    (23) multi_style -> . DRAW_STYLE COLOR , DRAW_STYLE COLOR
+    (24) multi_style -> . multi_style , DRAW_STYLE COLOR
 
-    DRAW_STYLE      shift and go to state 34
+    DRAW_STYLE      shift and go to state 41
 
-    multi_style                    shift and go to state 33
+    multi_style                    shift and go to state 40
 
-state 28
+state 33
 
     (13) display -> PLOTNAME WIDTH style .
 
     RBRACE          reduce using rule 13 (display -> PLOTNAME WIDTH style .)
-    PLOTNAME        reduce using rule 13 (display -> PLOTNAME WIDTH style .)
     FIELDNAME       reduce using rule 13 (display -> PLOTNAME WIDTH style .)
     LBRACKET        reduce using rule 13 (display -> PLOTNAME WIDTH style .)
     $end            reduce using rule 13 (display -> PLOTNAME WIDTH style .)
 
 
-state 29
+state 34
 
-    (16) style -> DRAW_STYLE . COLOR
+    (22) style -> DRAW_STYLE . COLOR
 
-    COLOR           shift and go to state 35
+    COLOR           shift and go to state 42
 
 
-state 30
+state 35
+
+    (15) arguments -> arguments argument .
+
+    WIDTH           reduce using rule 15 (arguments -> arguments argument .)
+    DRAW_STYLE      reduce using rule 15 (arguments -> arguments argument .)
+    COLOR           reduce using rule 15 (arguments -> arguments argument .)
+    PLOTNAME        reduce using rule 15 (arguments -> arguments argument .)
+    INTEGER         reduce using rule 15 (arguments -> arguments argument .)
+    RBRACE          reduce using rule 15 (arguments -> arguments argument .)
+    FIELDNAME       reduce using rule 15 (arguments -> arguments argument .)
+    LBRACKET        reduce using rule 15 (arguments -> arguments argument .)
+    $end            reduce using rule 15 (arguments -> arguments argument .)
+
+
+state 36
+
+    (17) argument -> WIDTH .
+
+    WIDTH           reduce using rule 17 (argument -> WIDTH .)
+    DRAW_STYLE      reduce using rule 17 (argument -> WIDTH .)
+    COLOR           reduce using rule 17 (argument -> WIDTH .)
+    PLOTNAME        reduce using rule 17 (argument -> WIDTH .)
+    INTEGER         reduce using rule 17 (argument -> WIDTH .)
+    RBRACE          reduce using rule 17 (argument -> WIDTH .)
+    FIELDNAME       reduce using rule 17 (argument -> WIDTH .)
+    LBRACKET        reduce using rule 17 (argument -> WIDTH .)
+    $end            reduce using rule 17 (argument -> WIDTH .)
+
+
+state 37
 
     (12) display -> HIGHLIGHT INTEGER INTEGER . style
-    (16) style -> . DRAW_STYLE COLOR
+    (22) style -> . DRAW_STYLE COLOR
 
-    DRAW_STYLE      shift and go to state 29
+    DRAW_STYLE      shift and go to state 34
 
-    style                          shift and go to state 36
+    style                          shift and go to state 43
 
-state 31
+state 38
 
     (8) fields -> LBRACKET fields RBRACKET , . FIELDNAME
     (10) fields -> fields RBRACKET , . FIELDNAME
 
-    FIELDNAME       shift and go to state 37
+    FIELDNAME       shift and go to state 44
 
 
-state 32
+state 39
 
     (9) fields -> LBRACKET fields , FIELDNAME .
     (7) fields -> fields , FIELDNAME .
@@ -405,45 +548,43 @@ state 32
   ! RBRACKET        [ reduce using rule 9 (fields -> LBRACKET fields , FIELDNAME .) ]
 
 
-state 33
+state 40
 
     (11) display -> PLOTNAME WIDTH LBRACKET multi_style . RBRACKET
-    (18) multi_style -> multi_style . , DRAW_STYLE COLOR
+    (24) multi_style -> multi_style . , DRAW_STYLE COLOR
 
-    RBRACKET        shift and go to state 38
-    ,               shift and go to state 39
-
-
-state 34
-
-    (17) multi_style -> DRAW_STYLE . COLOR , DRAW_STYLE COLOR
-
-    COLOR           shift and go to state 40
+    RBRACKET        shift and go to state 45
+    ,               shift and go to state 46
 
 
-state 35
+state 41
 
-    (16) style -> DRAW_STYLE COLOR .
+    (23) multi_style -> DRAW_STYLE . COLOR , DRAW_STYLE COLOR
 
-    RBRACE          reduce using rule 16 (style -> DRAW_STYLE COLOR .)
-    PLOTNAME        reduce using rule 16 (style -> DRAW_STYLE COLOR .)
-    FIELDNAME       reduce using rule 16 (style -> DRAW_STYLE COLOR .)
-    LBRACKET        reduce using rule 16 (style -> DRAW_STYLE COLOR .)
-    $end            reduce using rule 16 (style -> DRAW_STYLE COLOR .)
+    COLOR           shift and go to state 47
 
 
-state 36
+state 42
+
+    (22) style -> DRAW_STYLE COLOR .
+
+    RBRACE          reduce using rule 22 (style -> DRAW_STYLE COLOR .)
+    FIELDNAME       reduce using rule 22 (style -> DRAW_STYLE COLOR .)
+    LBRACKET        reduce using rule 22 (style -> DRAW_STYLE COLOR .)
+    $end            reduce using rule 22 (style -> DRAW_STYLE COLOR .)
+
+
+state 43
 
     (12) display -> HIGHLIGHT INTEGER INTEGER style .
 
     RBRACE          reduce using rule 12 (display -> HIGHLIGHT INTEGER INTEGER style .)
-    PLOTNAME        reduce using rule 12 (display -> HIGHLIGHT INTEGER INTEGER style .)
     FIELDNAME       reduce using rule 12 (display -> HIGHLIGHT INTEGER INTEGER style .)
     LBRACKET        reduce using rule 12 (display -> HIGHLIGHT INTEGER INTEGER style .)
     $end            reduce using rule 12 (display -> HIGHLIGHT INTEGER INTEGER style .)
 
 
-state 37
+state 44
 
     (8) fields -> LBRACKET fields RBRACKET , FIELDNAME .
     (10) fields -> fields RBRACKET , FIELDNAME .
@@ -460,71 +601,72 @@ state 37
   ! ,               [ reduce using rule 10 (fields -> fields RBRACKET , FIELDNAME .) ]
 
 
-state 38
+state 45
 
     (11) display -> PLOTNAME WIDTH LBRACKET multi_style RBRACKET .
 
     RBRACE          reduce using rule 11 (display -> PLOTNAME WIDTH LBRACKET multi_style RBRACKET .)
-    PLOTNAME        reduce using rule 11 (display -> PLOTNAME WIDTH LBRACKET multi_style RBRACKET .)
     FIELDNAME       reduce using rule 11 (display -> PLOTNAME WIDTH LBRACKET multi_style RBRACKET .)
     LBRACKET        reduce using rule 11 (display -> PLOTNAME WIDTH LBRACKET multi_style RBRACKET .)
     $end            reduce using rule 11 (display -> PLOTNAME WIDTH LBRACKET multi_style RBRACKET .)
 
 
-state 39
+state 46
 
-    (18) multi_style -> multi_style , . DRAW_STYLE COLOR
+    (24) multi_style -> multi_style , . DRAW_STYLE COLOR
 
-    DRAW_STYLE      shift and go to state 41
-
-
-state 40
-
-    (17) multi_style -> DRAW_STYLE COLOR . , DRAW_STYLE COLOR
-
-    ,               shift and go to state 42
+    DRAW_STYLE      shift and go to state 48
 
 
-state 41
+state 47
 
-    (18) multi_style -> multi_style , DRAW_STYLE . COLOR
+    (23) multi_style -> DRAW_STYLE COLOR . , DRAW_STYLE COLOR
 
-    COLOR           shift and go to state 43
-
-
-state 42
-
-    (17) multi_style -> DRAW_STYLE COLOR , . DRAW_STYLE COLOR
-
-    DRAW_STYLE      shift and go to state 44
+    ,               shift and go to state 49
 
 
-state 43
+state 48
 
-    (18) multi_style -> multi_style , DRAW_STYLE COLOR .
+    (24) multi_style -> multi_style , DRAW_STYLE . COLOR
 
-    RBRACKET        reduce using rule 18 (multi_style -> multi_style , DRAW_STYLE COLOR .)
-    ,               reduce using rule 18 (multi_style -> multi_style , DRAW_STYLE COLOR .)
-
-
-state 44
-
-    (17) multi_style -> DRAW_STYLE COLOR , DRAW_STYLE . COLOR
-
-    COLOR           shift and go to state 45
+    COLOR           shift and go to state 50
 
 
-state 45
+state 49
 
-    (17) multi_style -> DRAW_STYLE COLOR , DRAW_STYLE COLOR .
+    (23) multi_style -> DRAW_STYLE COLOR , . DRAW_STYLE COLOR
 
-    RBRACKET        reduce using rule 17 (multi_style -> DRAW_STYLE COLOR , DRAW_STYLE COLOR .)
-    ,               reduce using rule 17 (multi_style -> DRAW_STYLE COLOR , DRAW_STYLE COLOR .)
+    DRAW_STYLE      shift and go to state 51
+
+
+state 50
+
+    (24) multi_style -> multi_style , DRAW_STYLE COLOR .
+
+    RBRACKET        reduce using rule 24 (multi_style -> multi_style , DRAW_STYLE COLOR .)
+    ,               reduce using rule 24 (multi_style -> multi_style , DRAW_STYLE COLOR .)
+
+
+state 51
+
+    (23) multi_style -> DRAW_STYLE COLOR , DRAW_STYLE . COLOR
+
+    COLOR           shift and go to state 52
+
+
+state 52
+
+    (23) multi_style -> DRAW_STYLE COLOR , DRAW_STYLE COLOR .
+
+    RBRACKET        reduce using rule 23 (multi_style -> DRAW_STYLE COLOR , DRAW_STYLE COLOR .)
+    ,               reduce using rule 23 (multi_style -> DRAW_STYLE COLOR , DRAW_STYLE COLOR .)
 
 WARNING: 
 WARNING: Conflicts:
 WARNING: 
-WARNING: reduce/reduce conflict in state 32 resolved using rule (fields -> fields , FIELDNAME)
-WARNING: rejected rule (fields -> LBRACKET fields , FIELDNAME) in state 32
-WARNING: reduce/reduce conflict in state 37 resolved using rule (fields -> LBRACKET fields RBRACKET , FIELDNAME)
-WARNING: rejected rule (fields -> fields RBRACKET , FIELDNAME) in state 37
+WARNING: shift/reduce conflict for LBRACKET in state 20 resolved as shift
+WARNING: shift/reduce conflict for DRAW_STYLE in state 20 resolved as shift
+WARNING: reduce/reduce conflict in state 39 resolved using rule (fields -> fields , FIELDNAME)
+WARNING: rejected rule (fields -> LBRACKET fields , FIELDNAME) in state 39
+WARNING: reduce/reduce conflict in state 44 resolved using rule (fields -> LBRACKET fields RBRACKET , FIELDNAME)
+WARNING: rejected rule (fields -> fields RBRACKET , FIELDNAME) in state 44
