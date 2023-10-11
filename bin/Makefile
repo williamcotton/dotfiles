@@ -6,3 +6,7 @@ impbcopy:
 
 filterpng:
 	swiftc filterpng.swift -o filterpng
+
+yip:
+	lex yip.l
+	cc lex.yy.c -o yip -ll
