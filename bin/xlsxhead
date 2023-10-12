@@ -1,0 +1,16 @@
+#!/usr/bin/env python3
+
+import sys
+import openpyxl
+from io import BytesIO
+
+# Read Excel file from standard input
+buffer = BytesIO(sys.stdin.buffer.read())
+wb = openpyxl.load_workbook(buffer)
+
+# Select active worksheet
+ws = wb.active
+
+# Print headers to standard output
+headers = [cell.value if cell.value is not None else "" for cell in next(ws.iter_rows())]
+print(",".join(headers))
