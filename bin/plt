@@ -215,6 +215,7 @@ tokens = (
     "PLOTNAME",
     "WIDTH",
     "INTEGER",
+    "STRING",
     "LBRACKET",
     "RBRACKET",
     "LBRACE",
@@ -230,18 +231,9 @@ hex_color_regex = r"\#\w{6}|\#\w{3}"
 t_COLOR = f"({color_names_regex}|{hex_color_regex})"
 
 
-def t_WIDTH(t):
-    r"\d+px"
-    if t.lexer.start_attributes == True:
-        t.type = "PLOTNAME"
-    return t
+t_WIDTH = r"\d+px"
 
-
-def t_INTEGER(t):
-    r"\d+"
-    if t.lexer.start_attributes == True:
-        t.type = "PLOTNAME"
-    return t
+t_INTEGER = r"\d+"
 
 
 def t_FIELDNAME(t):
@@ -250,15 +242,11 @@ def t_FIELDNAME(t):
         t.type = reserved.get(t.value, "FIELDNAME")  # Check for reserved words
     if t.lexer.start_display == True:
         t.type = reserved.get(t.value, "PLOTNAME")  # Check for reserved words
-    if t.lexer.start_attributes == True:
-        t.type = "PLOTNAME"
     return t
 
 
 def t_PLOTNAME(t):
     r"[a-zA-Z_][a-zA-Z0-9_\-\/]*"  # plot names must start with a letter or underscore
-    # if t.lexer.start_display != True:
-    #     t.type = plot_reserved.get(t.value, "FIELDNAME")  # Check for reserved words
     return t
 
 
@@ -319,6 +307,8 @@ parsers = {
     "highlight": {"parser": highlight_parser},
 }
 
+original_parsers = parsers.copy()
+
 # Add the base_parser to any plugins that don't have a parser defined
 for plugin_name, plugin_data in plugins.items():
     if "parser" not in plugin_data:
@@ -334,19 +324,6 @@ def p_program(p):
     pass
 
 
-def p_error_command(p):
-    """command : fields display RBRACE
-    | fields LBRACE display"""
-    code = p.lexer.lexdata
-    if p[2] == "{":
-        message = "Missing '}'"
-        value = "{"
-    else:
-        message = "Missing '{'"
-        value = "}"
-    error_message_and_exit(code, value, message, code.rfind(value, 0, p.lexer.lexpos))
-
-
 command = {}
 
 
@@ -360,7 +337,6 @@ def p_command(p):
     p.lexer.start_fields = False
     p.lexer.fields_processed = False
     p.lexer.start_display = False
-    p.lexer.start_attributes = False
     pass
 
 
@@ -439,9 +415,9 @@ def p_display(p):
     """display : PLOTNAME WIDTH LBRACKET multi_style RBRACKET
     | HIGHLIGHT INTEGER INTEGER style
     | PLOTNAME WIDTH style
-    | PLOTNAME
-    | display PLOTNAME"""
-    if len(p) == 2:
+    | PLOTNAME arguments"""
+    command.update({"plot_style": p[1]})
+    if "attributes" in command:
         if p[1] not in parsers:
             error_message_and_exit(
                 p.lexer.lexdata,
@@ -449,27 +425,55 @@ def p_display(p):
                 f"Unknown plot style '{p[1]}'",
                 p.lexer.lexdata.rfind(p[1], 0, p.lexer.lexpos),
             )
-        p.lexer.start_attributes = True
         template_name = p[1] + "_template.py"
-        command.update({"plot_style": p[1], "template_name": template_name})
-        p[0] = [p[1]]
-        command.update({"attributes": p[0]})
+        command.update({"template_name": template_name, "attributes": p[2]})
+        # if command plot_style is in parsers and commands has 'attributes' key then error
+        if "attributes" in command and p[1] in original_parsers:
+            error_message_and_exit(
+                p.lexer.lexdata,
+                p[2][-1],
+                f"Plot style '{p[1]}' does not accept attributes",
+                p.lexer.lexdata.rfind(p[1], 0, p.lexer.lexpos),
+            )
+        command.update(parsers[p[1]]["parser"]([0] + command["attributes"]))
     else:
-        if p.lexer.start_attributes == True:
-            p[0] = p[1] + [p[2]]
-            command.update({"attributes": p[0]})
-        else:
-            plot_template_prefix = "multi_" + p[1] if p[3] == "[" else p[1]
-            if plot_template_prefix not in parsers:
-                error_message_and_exit(
-                    p.lexer.lexdata,
-                    p[1],
-                    f"Unknown plot style '{p[1]}'",
-                    p.lexer.lexdata.rfind(p[1], 0, p.lexer.lexpos),
-                )
-            template_name = plot_template_prefix + "_template.py"
-            command.update({"plot_style": p[1], "template_name": template_name})
-            command.update(parsers[plot_template_prefix]["parser"](p))
+        plot_template_prefix = "multi_" + p[1] if p[3] == "[" else p[1]
+        if plot_template_prefix not in parsers:
+            error_message_and_exit(
+                p.lexer.lexdata,
+                p[1],
+                f"Unknown plot style '{p[1]}'",
+                p.lexer.lexdata.rfind(p[1], 0, p.lexer.lexpos),
+            )
+        template_name = plot_template_prefix + "_template.py"
+        command.update({"template_name": template_name})
+        command.update(parsers[plot_template_prefix]["parser"](p))
+    pass
+
+
+# arguments should be any number of any type of arguments separated by spaces
+def p_arguments(p):
+    """arguments : arguments argument
+    | argument"""
+    if len(p) == 2:
+        command.update({"attributes": [p[1]]})
+        p[0] = [p[1]]
+    else:
+        command["attributes"].append(p[2])
+        p[0] = p[1] + [p[2]]
+    pass
+
+
+def p_argument(p):
+    """argument : WIDTH
+    | DRAW_STYLE
+    | COLOR
+    | PLOTNAME
+    | INTEGER"""
+    if p[1].endswith("px"):
+        p[0] = int(p[1][:-2])
+    else:
+        p[0] = p[1]
     pass
 
 
@@ -524,7 +528,6 @@ if args.plt:
     # Reset the lexer
     lexer.start_fields = False
     lexer.start_display = False
-    lexer.start_attributes = False
     lexer.fields_processed = False
     # Parse the plt language string using the lexer and parser
     parser = yacc.yacc()
@@ -740,7 +743,19 @@ with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
     temp_file = f.name
 
 # Execute the temporary file using subprocess.run()
-subprocess.run(["python3", temp_file], stdin=sys.stdin, stdout=sys.stdout)
+try:
+    result = subprocess.run(
+        ["python3", temp_file],
+        stdin=sys.stdin,
+        stdout=sys.stdout,
+        stderr=subprocess.PIPE,
+        check=True,
+    )
+except Exception as e:
+    error_message = e.stderr.decode().strip()
+    print(error_message, file=sys.stderr)
+    sys.stdout.buffer.write(error_image_buffer.getvalue())
+    sys.exit(1)
 
 # Delete the temporary file
 os.unlink(temp_file)

@@ -7,4 +7,4 @@ ax.plot(x_value, y_{{ command['y_fieldname'] }}_value, color='{{ command['color'
 
 
 def parser(p):
-    return {"color": p[4], "width": p[5], "draw_style": "solid"}
+    return {"color": p[3], "width": p[4], "draw_style": "solid"}
