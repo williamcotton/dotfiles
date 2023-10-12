@@ -640,12 +640,13 @@ ax.plot(x_value, y_{{ command['y_fieldname'] }}_value, color='{{ command['color'
 ### bar_template.py ###########################################################
 bar_template_str: sourcetypes.python = """
 y_{{ command['y_fieldname'] }}_value = [float(y) for y in data['{{ command['y_fieldname'] }}']]
-    if styles[index]['draw_style'] == 'solid':
-        hatch = ''
-    if styles[index]['draw_style'] == 'dashed':
-        hatch = '/'
-    if styles[index]['draw_style'] == 'dotted':
-        hatch = 'o'
+draw_style = '{{ command['draw_style'] }}'
+if draw_style == 'solid':
+    hatch = ''
+if draw_style == 'dashed':
+    hatch = '/'
+if draw_style == 'dotted':
+    hatch = 'o'
 ax.bar(x_value, y_{{ command['y_fieldname'] }}_value, hatch=hatch, color='{{ command['color'] }}', width={{ command['width'] / 50 }}, alpha=0.5)
 """
 
