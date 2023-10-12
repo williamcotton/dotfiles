@@ -1,0 +1,27 @@
+#!/usr/bin/env python3
+
+import curses
+
+# Initialize curses
+stdscr = curses.initscr()
+curses.noecho()
+curses.cbreak()
+stdscr.keypad(True)
+
+# Get screen dimensions
+height, width = stdscr.getmaxyx()
+
+# Draw box with normal line border
+stdscr.border()
+
+# Refresh screen
+stdscr.refresh()
+
+# Wait for user input
+stdscr.getch()
+
+# Clean up curses
+curses.nocbreak()
+stdscr.keypad(False)
+curses.echo()
+curses.endwin()
