@@ -340,6 +340,25 @@ hlrow () {
   prependcss "$css"
 }
 
+function rc {
+  # Count the number of lines in the CSV file (excluding the header)
+  local count=$(tail -n +2 | wc -l)
+
+  # Output the integer value
+  echo "Row count: $count"
+}
+
+function rhead {
+  # Get the number of rows to display
+  local count="${1:-10}"
+
+  # Output the header
+  head -n 1
+
+  # Output the specified number of rows
+  tail -n +2 | head -n "$count"
+}
+
 appendjs() {
   local js_file="$1"
   shift
