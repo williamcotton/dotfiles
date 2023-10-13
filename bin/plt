@@ -623,6 +623,11 @@ ax.legend({{legend_names}})
 # Set the x-axis labels
 ax.set_xlabel('{{ matplotlib_commands[0]['x_fieldname'].replace('_', ' ').replace('-', ' ').title() }}')
 plt.xticks(rotation=90)
+if len(x_value) > 40:
+    plt.xticks(np.arange(0, len(x_value), 12))
+
+if len(x_value) > 100:
+    plt.xticks(np.arange(0, len(x_value), 100))    
 
 # Set the y-axis label
 ax.set_ylabel('Count')
