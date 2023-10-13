@@ -9,9 +9,12 @@ lines = sys.stdin.readlines()
 if not lines:
     print('Error: no input received')
 else:
+    # Determine the delimiter based on the first line
+    delimiter = '\t' if '\t' in lines[0] else ','
+
     # Get the column names and rows from the query results
-    columns = lines[0].strip().split('\t')
-    rows = [line.strip().split('\t') for line in lines[1:]]
+    columns = lines[0].strip().split(delimiter)
+    rows = [line.strip().split(delimiter) for line in lines[1:]]
 
     # Create a table from the column names and rows
     table_data = [columns] + rows
