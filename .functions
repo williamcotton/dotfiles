@@ -323,8 +323,12 @@ htmltopdf() {
 prependcss() {
   local html="$(cat -)"
   local css=""
-  for css_file in "$@"; do
-    css="$css$(cat "$css_file")"
+  for arg in "$@"; do
+    if [[ -f "$arg" ]]; then
+      css="$css$(cat "$arg")"
+    else
+      css="$css$arg"
+    fi
   done
   echo "<style>$css</style>$html"
 }
