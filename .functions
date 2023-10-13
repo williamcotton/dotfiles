@@ -236,6 +236,8 @@ prj() {
   fi
 }
 
+alias chrome="/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
+
 ss() {
   local url=$1
   if [[ ! "$url" =~ ^https?:// ]]; then

@@ -22,7 +22,6 @@ alias ber="bundle exec rspec"
 alias yt="yarn test -u --coverage=false"
 alias jit="node inspect node_modules/.bin/jest"
 alias lss="find . -not -path '*/\.*'"
-alias chrome="/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
 
 # List all files colorized in long format
 alias l="ls -Gl"
