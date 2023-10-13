@@ -329,6 +329,13 @@ prependcss() {
   echo "<style>$css</style>$html"
 }
 
+hlrow () {
+  local row="$1"
+  local color="${2:-yellow}"
+  local css="tr:nth-child($(($row + 1))) { background-color: $color; }"
+  prependcss "$css"
+}
+
 appendjs() {
   local js_file="$1"
   shift
