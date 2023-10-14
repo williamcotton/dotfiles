@@ -29,6 +29,28 @@ function server() {
     fg
 }
 
+function picko() {
+  osascript 3<&0 "$@" <<EOF | tr '\r' '\n'
+    on run argv
+      set stdin to do shell script "cat 0<&3"
+      set options to paragraphs of (stdin)
+
+      tell application "System Events"
+        activate
+        choose from list options
+      end tell
+    end run
+EOF
+}
+
+function sshapp() {
+  osascript -e "tell app \"Terminal\"
+    set win to do script \"ssh $1\"
+    set win's current settings to settings set \"Pro\"
+    activate
+  end tell"
+}
+
 # Test if HTTP compression (RFC 2616 + SDCH) is enabled for a given URL.
 # Send a fake UA string for sites that sniff it instead of using the Accept-Encoding header. (Looking at you, ajax.googleapis.com!)
 function httpcompression() {
