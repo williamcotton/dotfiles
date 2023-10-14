@@ -4,6 +4,9 @@ impbcopyoc:
 impbcopy:
 	swiftc impbcopy.swift -o impbcopy
 
+impbpaste:
+	swiftc impbpaste.swift -o impbpaste
+
 filterpng:
 	swiftc filterpng.swift -o filterpng
 
