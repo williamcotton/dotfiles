@@ -74,13 +74,8 @@ function codepoint() {
 	echo # newline
 }
 
-# Open a tx on blocktrail
-function txi() {
-	open "https://www.blocktrail.com/tBTC/tx/$@"
-}
-
-function adi() {
-	open "https://www.blocktrail.com/tBTC/address/$@"
+unixv() {
+  find /usr/share/man -type f -exec grep -q ".At $1" {} \; -exec echo {} \;
 }
 
 # check out branch WMW-4324
