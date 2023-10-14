@@ -1,0 +1,4 @@
+#!/bin/zsh
+
+DIR=$(dirname "$0")
+electron "$DIR/elec_src/elec.js" "$@"

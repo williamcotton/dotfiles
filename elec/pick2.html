@@ -1,0 +1,31 @@
+<!-- 
+
+  A simple FORM to PICK a HEADER from a CSV on STDIN and return the PICKED_SELECTION to STDOUT_AND_EXIT.
+
+ -->
+
+<form id="FORM">
+  <label for="PICK">Pick:</label>
+  <select name="PICKED_SELECTION" id="PICK" autofocus></select>
+  <button type="submit">Submit</button>
+</form>
+
+<script>
+  STDIN(CSV =>                    // First, read CSV data from STDIN...
+    CSV.split('\n')[0].split(',') // ...Next parse out the headers from the CSV data...
+      .forEach(HEADER =>            // ...and then for each HEADER...
+        document
+          .getElementById("PICK")                       // ...take the PICK element from the above FORM...
+          .appendChild(                                   // ...and append a child...
+            Object.assign(document.createElement("option"), // ...option element...
+             { value: HEADER, text: HEADER })                 // ...with the value and text set to the HEADER
+          )
+      )
+  )
+
+  document
+    .getElementById("FORM")                                       // for the above FORM...
+    .addEventListener("submit", e =>                              // ...listen for it to be submitted...
+      STDOUT_AND_EXIT(new FormData(e.target).get('PICKED_SELECTION')) // ...and then return the PICKED_SELECTION value to STDOUT_AND_EXIT
+    )
+</script>
