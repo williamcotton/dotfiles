@@ -2,6 +2,8 @@ const { contextBridge, ipcRenderer } = require("electron");
 const { parse: csvParse } = require("csv-parse");
 const { argv } = require("node:process");
 
+const remote = require('@electron/remote');
+
 contextBridge.exposeInMainWorld("ipcRenderer", ipcRenderer);
 
 contextBridge.exposeInMainWorld(
@@ -13,9 +15,13 @@ contextBridge.exposeInMainWorld("resizeWindow", (width, height) => {
   ipcRenderer.send("resize-window", { width, height });
 });
 
+contextBridge.exposeInMainWorld("focusWindow", () => {
+  ipcRenderer.send("focus-window");
+});
+
 // SYSTEM CALLS
 
-contextBridge.exposeInMainWorld("ARGV", argv);
+contextBridge.exposeInMainWorld("ARGV", remote.process.argv);
 
 contextBridge.exposeInMainWorld("STDIN", (callback) => {
   ipcRenderer.on("stdin-response", (_, data) => {

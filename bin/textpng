@@ -1,0 +1,52 @@
+#!/usr/bin/env python3
+
+import sys
+from PIL import Image, ImageDraw, ImageFont
+
+def adjust_font_size(text, font_path, max_width, padding):
+    """Adjust font size so the text fits within the specified width."""
+    font_size = 200  # starting font size
+    font = ImageFont.truetype(font_path, font_size)
+    bbox = font.getbbox(text)
+    text_width = bbox[2] - bbox[0]
+
+    while text_width > (max_width - 2 * padding):
+        print(text, text_width, max_width, font_size)
+        font_size -= 1
+        font = ImageFont.truetype(font_path, font_size)
+        bbox = font.getbbox(text)
+        text_width = bbox[2] - bbox[0]
+
+    return font
+
+# Define the text to be written on the image
+text = sys.argv[1]
+
+# Define the font to be used
+font_path = "/System/Library/Fonts/SFNS.ttf"
+
+# Define the image dimensions and padding
+IMAGE_WIDTH = 480
+IMAGE_HEIGHT = 480
+PADDING = 10
+
+# Adjust the font size based on the text width and padding
+font = adjust_font_size(text, font_path, IMAGE_WIDTH, PADDING)
+
+# Calculate the size of the text with the adjusted font size
+# Calculate the size of the image based on the size of the text and font
+bbox = font.getbbox(text)
+text_width = bbox[2] - bbox[0]
+text_height = bbox[3] - bbox[1]
+
+# Create a new image with the given size and a white background
+image = Image.new("RGB", (IMAGE_WIDTH, IMAGE_HEIGHT), "white")
+
+# Draw the text on the image with black color and centered alignment
+draw = ImageDraw.Draw(image)
+x = (IMAGE_WIDTH - text_width) / 2
+y = (IMAGE_HEIGHT - text_height) / 2
+draw.text((x, y), text, fill="black", font=font)
+
+# Send image to standard output
+image.save(sys.stdout.buffer, "PNG")

@@ -25,13 +25,13 @@
   }
   
   @media (prefers-color-scheme: dark) {
-    form, select, input {
+    form, select, input, textarea, body, button {
       background-color: black;
       color: white;
     }
   }
   @media (prefers-color-scheme: light) {
-    form, select, input {
+    form, select, input, textarea, body {
       background-color: white;
       color: black;
     }
@@ -51,6 +51,6 @@
   resizeWindow(640, 480);
 
   document.getElementById("FORM").addEventListener("submit", e => {  // Next, when the above FORM is submitted...
-    STDOUT_AND_EXIT(new FormData(e.target).get('INPUT_TEXT')); // ...return the PICKED_SELECTION value to STDOUT_AND_EXIT
+    STDOUT(new FormData(e.target).get('INPUT_TEXT')); // ...return the PICKED_SELECTION value to STDOUT_AND_EXIT
   });
 </script>

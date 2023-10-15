@@ -20,13 +20,13 @@
   }
   
   @media (prefers-color-scheme: dark) {
-    form, select, input {
+    form, select, input, body {
       background-color: black;
       color: white;
     }
   }
   @media (prefers-color-scheme: light) {
-    form, select, input {
+    form, select, input, body {
       background-color: white;
       color: black;
     }
@@ -47,17 +47,29 @@
 <script>
   /* global STDIN, STDOUT_AND_EXIT */
 
+  const nofocus = ARGV[3].match(/nofocus/);
+
+  if (nofocus) {
+    document.getElementById("PICK").removeAttribute("autofocus");
+  }
+
   resizeWindow(300, 100);
 
   const createOptionElement = HEADER => `<option value="${HEADER}">${HEADER}</option>`;
 
   STDIN(INPUT => {                                             // First, read CSV data from STDIN..
-    const HEADERS = INPUT.split('\n');                         // ...then parse out the HEADERS from the CSV data...
+    const HEADERS = INPUT.trim().split('\n');                         // ...then parse out the HEADERS from the CSV data...
     const options = HEADERS.map(createOptionElement).join(''); // ...and then for each HEADER and create a list of child options elements...
     document.getElementById("PICK").innerHTML = options;       // ...and insert them into the the PICK element from the above FORM
+
+    // Focus on the select input if non-empty input comes from STDIN.
+    if (INPUT.trim().length > 0) {
+      focusWindow();
+      document.getElementById("PICK").focus();
+    }
   });
 
   document.getElementById("FORM").addEventListener("submit", e => {  // Next, when the above FORM is submitted...
-    STDOUT_AND_EXIT(new FormData(e.target).get('PICKED_SELECTION')); // ...return the PICKED_SELECTION value to STDOUT_AND_EXIT
+    STDOUT(new FormData(e.target).get('PICKED_SELECTION')); // ...return the PICKED_SELECTION value to STDOUT_AND_EXIT
   });
 </script>

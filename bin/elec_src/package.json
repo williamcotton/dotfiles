@@ -1,0 +1,14 @@
+{
+  "name": "elec",
+  "version": "1.0.0",
+  "description": "electron script runner with STDIO",
+  "main": "elec.js",
+  "author": "William Cotton",
+  "license": "MIT",
+  "dependencies": {
+    "@electron/remote": "^2.0.12",
+    "electron": "^27.0.0",
+    "minimist": "^1.2.8",
+    "tmp": "^0.2.1"
+  }
+}
