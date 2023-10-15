@@ -47,6 +47,8 @@ function sshapp() {
   osascript -e "tell app \"Terminal\"
     set win to do script \"ssh $1\"
     set win's current settings to settings set \"Pro\"
+    set number of columns of win to 120
+    set number of rows of win to 40
     activate
   end tell"
 }
