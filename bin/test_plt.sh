@@ -1,5 +1,7 @@
 #!/bin/zsh
 
+source ~/.zshrc
+
 plt "
 one, date {
   plotplug 10px dashed red
@@ -23,4 +25,4 @@ two, date {
 [one, two, three], date { stackbar 10px [solid orange, dashed #fed, dotted #8d2] }
 
 three, date { bleep blop blip green 10 }
-" <test.csv | imgcat
+" <test.csv | imgc

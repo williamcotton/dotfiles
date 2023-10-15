@@ -18,6 +18,11 @@
     margin: 10px;
     border-radius: 10px;
   }
+
+  textarea {
+    font-family: monospace;
+    font-size: 12px;
+  }
   
   @media (prefers-color-scheme: dark) {
     form, select, input {
@@ -31,15 +36,11 @@
       color: black;
     }
   }
-
-  button {
-    display: none;
-  }
 </style>
 
 <form id="FORM">
-  <label for="PICK">Pick:</label>
-  <select name="PICKED_SELECTION" id="PICK" autofocus></select>
+  <label for="INPUT">Write:</label>
+  <textarea name="INPUT_TEXT" id="INPUT" rows="24" cols="80" autofocus></textarea>
   <button type="submit">Submit</button>
 </form>
 
@@ -47,17 +48,9 @@
 <script>
   /* global STDIN, STDOUT_AND_EXIT */
 
-  resizeWindow(300, 100);
-
-  const createOptionElement = HEADER => `<option value="${HEADER}">${HEADER}</option>`;
-
-  STDIN(INPUT => {                                             // First, read CSV data from STDIN..
-    const HEADERS = INPUT.split('\n');                         // ...then parse out the HEADERS from the CSV data...
-    const options = HEADERS.map(createOptionElement).join(''); // ...and then for each HEADER and create a list of child options elements...
-    document.getElementById("PICK").innerHTML = options;       // ...and insert them into the the PICK element from the above FORM
-  });
+  resizeWindow(640, 480);
 
   document.getElementById("FORM").addEventListener("submit", e => {  // Next, when the above FORM is submitted...
-    STDOUT_AND_EXIT(new FormData(e.target).get('PICKED_SELECTION')); // ...return the PICKED_SELECTION value to STDOUT_AND_EXIT
+    STDOUT_AND_EXIT(new FormData(e.target).get('INPUT_TEXT')); // ...return the PICKED_SELECTION value to STDOUT_AND_EXIT
   });
 </script>
