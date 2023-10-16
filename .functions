@@ -1,5 +1,5 @@
 function hawk() {
-  awk -f hawk
+  awk -f "$HOME/dotfiles/bin/hawk"
 }
 
 # Create a new directory and enter it
