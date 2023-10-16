@@ -7,6 +7,24 @@ const { spawn } = require("child_process");
 const tmp = require("tmp");
 const fs = require("fs");
 
+const currentPid = process.pid;
+const parentPid = process.ppid;
+let grandparentPid = null;
+const pstree = spawn("pstree", ["-p", currentPid.toString()]);
+pstree.stdout.on("data", (data) => {
+  let prevPid = null;
+  data.toString().split("\n").forEach((line) => {
+    const match = line.match(/(\d+)/);
+    if (match) {
+      const pid = parseInt(match[1], 10);
+      if (pid === parentPid) {
+        grandparentPid = prevPid;
+      }
+      prevPid = pid;
+    }
+  });
+});
+
 const args = minimist(argv.slice(2));
 const coords = { x: parseInt(args.x, 10), y: parseInt(args.y, 10) };
 
@@ -23,8 +41,6 @@ const createWindow = () => {
     x: coords.x,
     y: coords.y,
     title: moduleName,
-    // frame: false,
-    // transparent: true,
     webPreferences: {
       nodeIntegration: true,
       enableRemoteModule: true,
@@ -62,6 +78,10 @@ const createWindow = () => {
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
   createWindow();
+
+  process.on("SIGINT", () => {
+    app.quit();
+  });
 });
 
 // Listen for the stdout event from the renderer process.
