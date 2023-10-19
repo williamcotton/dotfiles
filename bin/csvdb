@@ -10,6 +10,8 @@ parser = argparse.ArgumentParser(description="Import a CSV/TSV file into a MySQL
 parser.add_argument("database", help="the name of the MySQL database to use")
 parser.add_argument("table", help="the name of the table to create in the database")
 parser.add_argument("--tsv", action="store_true", help="use TSV format instead of CSV")
+parser.add_argument("--no-create", action="store_true", help="do not try to create the table")
+parser.add_argument("--varchar", type=int, default=255, help="the length of VARCHAR columns")
 args = parser.parse_args()
 
 # Connect to the MySQL server
@@ -25,16 +27,22 @@ else:
 # Get the headers from the first row of the file
 headers = next(reader)
 
-# Create the table in the database
-columns = ", ".join("`{}` VARCHAR(255)".format(header) for header in headers)
-create_table_query = "CREATE TABLE `{}` ({})".format(args.table, columns)
-cursor.execute(create_table_query)
+if not args.no_create:
+    # Create the table in the database
+    columns = ", ".join("`{}` VARCHAR({})".format(header, args.varchar) for header in headers)
+    create_table_query = "CREATE TABLE `{}` ({})".format(args.table, columns)
+    cursor.execute(create_table_query)
 
 # Insert the data into the table
 for row in reader:
     values = ", ".join("'{}'".format(value) for value in row)
     insert_query = "INSERT INTO `{}` ({}) VALUES ({})".format(args.table, ", ".join("`{}`".format(header) for header in headers), values)
-    cursor.execute(insert_query)
+    try:
+        cursor.execute(insert_query)
+    except Exception as e:
+        print("Error inserting row:", file=sys.stderr)
+        print(insert_query, file=sys.stderr)
+        print(e, file=sys.stderr)
 
 # Commit the changes and close the connection
 cnx.commit()
