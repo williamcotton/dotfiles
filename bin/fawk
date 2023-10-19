@@ -1,0 +1,21 @@
+function tsv_headers(header_list) {
+  split(header_list, headers, ",");
+  for (i = 1; i <= length(headers); i++) {
+    printf("%s", headers[i]);
+    if (i < length(headers)) {
+      printf("\t");
+    }
+  }
+  printf("\n");
+}
+
+function csv_headers(header_list) {
+  split(header_list, headers, ",");
+  for (i = 1; i <= length(headers); i++) {
+    printf("\"%s\"", headers[i]);
+    if (i < length(headers)) {
+      printf(",");
+    }
+  }
+  printf("\n");
+}

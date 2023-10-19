@@ -2,6 +2,10 @@ function hawk() {
   awk -f "$HOME/dotfiles/bin/hawk"
 }
 
+function fawk() {
+  gawk -i "$HOME/dotfiles/bin/fawk" "$@"
+}
+
 # Create a new directory and enter it
 function md() {
 	mkdir -p "$@" && cd "$@"
@@ -374,8 +378,8 @@ function rhead {
   # Output the header
   head -n 1
 
-  # Output the specified number of rows
-  tail -n +2 | head -n "$count"
+  # Output the specified number of rows, including the first row
+  awk -v count="$count" 'NR <= count' 
 }
 
 appendjs() {
