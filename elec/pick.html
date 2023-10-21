@@ -45,9 +45,9 @@
 
 
 <script>
-  /* global STDIN, STDOUT_AND_EXIT */
+  /* global STDIN, STDOUT, ARGV */
 
-  const nofocus = ARGV[3].match(/nofocus/);
+  const nofocus = ARGV[3] && ARGV[3].match(/nofocus/);
 
   if (nofocus) {
     document.getElementById("PICK").removeAttribute("autofocus");
@@ -58,7 +58,7 @@
   const createOptionElement = HEADER => `<option value="${HEADER}">${HEADER}</option>`;
 
   STDIN(INPUT => {                                             // First, read CSV data from STDIN..
-    const HEADERS = INPUT.trim().split('\n');                         // ...then parse out the HEADERS from the CSV data...
+    const HEADERS = INPUT.trim().split('\n');                  // ...then parse out the HEADERS from the CSV data...
     const options = HEADERS.map(createOptionElement).join(''); // ...and then for each HEADER and create a list of child options elements...
     document.getElementById("PICK").innerHTML = options;       // ...and insert them into the the PICK element from the above FORM
 
@@ -70,6 +70,6 @@
   });
 
   document.getElementById("FORM").addEventListener("submit", e => {  // Next, when the above FORM is submitted...
-    STDOUT(new FormData(e.target).get('PICKED_SELECTION')); // ...return the PICKED_SELECTION value to STDOUT_AND_EXIT
+    STDOUT(new FormData(e.target).get('PICKED_SELECTION')); // ...return the PICKED_SELECTION value to STDOUT
   });
 </script>
