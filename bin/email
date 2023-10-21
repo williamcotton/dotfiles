@@ -1,0 +1,43 @@
+#!/usr/bin/env python
+
+import argparse
+import os
+import subprocess
+
+APPLESCRIPT_TEMPLATE = '''
+tell application "Mail"
+    set newMessage to make new outgoing message with properties {{subject:"{subject}", content:"{content}"}}
+    {recipient_commands}
+    {attachment_commands}
+    activate
+end tell
+'''
+
+def send_email(subject, content, addresses, attachments):
+    # Build the AppleScript for adding recipients
+    recipient_commands = ''
+    for address in addresses:
+        recipient_commands += 'tell newMessage to make new to recipient with properties {{address:"%s"}}\n' % address
+
+    # Build the AppleScript for adding attachments
+    attachment_commands = ''
+    for attachment in attachments:
+        attachment_commands += 'tell newMessage to make new attachment with properties {{file name:"%s"}} at after the last paragraph\n' % os.path.abspath(attachment)
+
+    # Build the full AppleScript
+    applescript = APPLESCRIPT_TEMPLATE.format(subject=subject, content=content, recipient_commands=recipient_commands, attachment_commands=attachment_commands)
+
+    # Run the AppleScript
+    subprocess.run(['osascript', '-e', applescript])
+
+if __name__ == '__main__':
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='Send an email with attachments using the Mail app')
+    parser.add_argument('subject', help='the subject of the email')
+    parser.add_argument('content', help='the body of the email')
+    parser.add_argument('-a', '--addresses', nargs='+', help='the email addresses of the recipients')
+    parser.add_argument('-f', '--attachments', nargs='+', help='the file paths of the attachments')
+    args = parser.parse_args()
+
+    # Send the email
+    send_email(args.subject, args.content, args.addresses, args.attachments)
