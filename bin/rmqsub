@@ -13,11 +13,15 @@ queue_name = sys.argv[1]
 
 # Define the callback function
 def callback(ch, method, properties, body):
-    print(body)
+    print(body.decode())
 
 
 # Consume messages from the queue
 channel.basic_consume(queue=queue_name, on_message_callback=callback, auto_ack=True)
 
-# Start consuming messages
-channel.start_consuming()
+try:
+    # Start consuming messages
+    channel.start_consuming()
+except KeyboardInterrupt:
+    # Stop consuming messages
+    channel.stop_consuming()
