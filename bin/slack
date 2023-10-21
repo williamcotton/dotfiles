@@ -1,0 +1,27 @@
+#!/usr/bin/env python
+
+import argparse
+import subprocess
+
+APPLESCRIPT_TEMPLATE = '''
+tell script "Slack"
+    send message "{text}" in channel "#{channel}"
+end tell
+'''
+
+def post_to_slack(channel, text):
+    # Build the AppleScript
+    applescript = APPLESCRIPT_TEMPLATE.format(channel=channel, text=text)
+
+    # Run the AppleScript
+    subprocess.run(['osascript', '-e', applescript])
+
+if __name__ == '__main__':
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='Start a new post in a Slack channel')
+    parser.add_argument('channel', help='the name of the Slack channel')
+    parser.add_argument('text', help='the text of the post')
+    args = parser.parse_args()
+
+    # Post to Slack
+    post_to_slack(args.channel, args.text)
