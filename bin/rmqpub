@@ -1,0 +1,20 @@
+#!/usr/bin/env python3
+
+import pika
+import sys
+
+# Connect to the RabbitMQ server
+connection = pika.BlockingConnection(pika.ConnectionParameters("localhost"))
+channel = connection.channel()
+
+# Get the queue name from the command line arguments
+queue_name = sys.argv[1]
+
+# Get the message from standard input
+message = sys.stdin.read()
+
+# Publish the message to the queue
+channel.basic_publish(exchange="", routing_key=queue_name, body=message)
+
+# Close the connection
+connection.close()

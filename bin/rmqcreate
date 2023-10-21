@@ -1,0 +1,17 @@
+#!/usr/bin/env python3
+
+import pika
+import sys
+
+# Connect to the RabbitMQ server
+connection = pika.BlockingConnection(pika.ConnectionParameters("localhost"))
+channel = connection.channel()
+
+# Declare the queue
+queue_name = sys.argv[1]
+channel.queue_declare(
+    queue=queue_name, durable=False, exclusive=False, auto_delete=True
+)
+
+# Close the connection
+connection.close()
