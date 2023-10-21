@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<div id="container"></div>
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="https://cdn.jsdelivr.net/npm/@observablehq/plot@0.6"></script>
+<script type="module">
+
+const columnName = ARGV[3];
+
+resizeWindow(640, 480);
+
+STDIN(input => {
+  const rows = input.trim().split('\n');
+  const data = rows.map(row => row.split(','));
+  const headers = data.shift();
+  const columns = headers.map((header, i) => data.map(row => row[i]));
+  const types = columns.map(column => {
+    const values = column.map(value => value.trim());
+    const numbers = values.map(value => Number(value));
+    const isNumber = numbers.every(number => !isNaN(number));
+    return isNumber ? "number" : "string";
+  });
+  columns.forEach((column, i) => {
+    if (types[i] === "number") {
+      columns[i] = column.map(value => Number(value));
+    }
+  });
+  function columnsFromHeader(header) {
+    const i = headers.indexOf(header);
+    return columns[i];
+  }
+  const table = {headers, columns, types};
+  const xValues = columnName ? columnsFromHeader(columnName) : columns[0];
+  const plot = Plot.rectY({length: 10000}, Plot.binX({y: "count"}, {x: xValues, fill: "steelblue"})).plot();
+  const div = document.querySelector("#container");
+  div.append(plot);
+});
+
+</script>
