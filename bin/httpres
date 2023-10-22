@@ -27,6 +27,10 @@ try:
             print("Invalid HTTP request")
             continue
 
+        if connection.is_closed:
+            # If the connection is closed, start it again
+            connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+
         channel = connection.channel()
 
         channel.basic_publish(
