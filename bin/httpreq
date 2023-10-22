@@ -17,7 +17,6 @@ channel.queue_declare(queue=path)
 
 def on_request(ch, method, props, body):
     http_text = body.decode()
-    http_text += LINE_SEPARATOR
     http_text += f"Correlation-ID: {props.correlation_id}\n"
     http_text += f"Reply-To: {props.reply_to}\n"
     http_text += f"Delivery-Tag: {method.delivery_tag}\n"
