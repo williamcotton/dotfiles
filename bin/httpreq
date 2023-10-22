@@ -1,15 +1,23 @@
 #!/usr/bin/env python
 
+LINE_SEPARATOR = " "
+
 import pika
 import sys
 
 connection = pika.BlockingConnection(pika.ConnectionParameters(host="localhost"))
 channel = connection.channel()
-channel.queue_declare(queue="rpc_queue")
+
+# Get the HTTP path from the command line arguments
+path = sys.argv[1] if len(sys.argv) > 1 else "/"
+
+# Declare a queue with the same name as the HTTP path
+channel.queue_declare(queue=path)
 
 
 def on_request(ch, method, props, body):
     http_text = body.decode()
+    http_text += LINE_SEPARATOR
     http_text += f"Correlation-ID: {props.correlation_id}\n"
     http_text += f"Reply-To: {props.reply_to}\n"
     http_text += f"Delivery-Tag: {method.delivery_tag}\n"
@@ -18,5 +26,11 @@ def on_request(ch, method, props, body):
     sys.stdout.flush()
 
 
-channel.basic_consume(queue="rpc_queue", on_message_callback=on_request, auto_ack=True)
-channel.start_consuming()
+channel.basic_consume(queue=path, on_message_callback=on_request, auto_ack=True)
+
+try:
+    # Start consuming messages
+    channel.start_consuming()
+except KeyboardInterrupt:
+    # Stop consuming messages
+    channel.stop_consuming()

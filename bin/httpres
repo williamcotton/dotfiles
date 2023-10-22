@@ -1,30 +1,40 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import pika
 import sys
 import re
 
-while True:
-    http_text = ""
+connection = pika.BlockingConnection(
+    pika.ConnectionParameters(host="localhost")
+)
+
+
+try:
     while True:
-        line = sys.stdin.readline()
-        if line == "\n":
-            break
-        http_text += line
+        http_text = ""
+        while True:
+            line = sys.stdin.readline()
+            if line == "\n":
+                break
+            http_text += line
 
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host="localhost"))
-    channel = connection.channel()
-    channel.queue_declare(queue="rpc_queue")
+        # Extract the Correlation-ID, Reply-To, and Delivery-Tag headers using regex
+        correlation_id = re.search(r"Correlation-ID: (.+)", http_text).group(1)
+        reply_to = re.search(r"Reply-To: (.+)", http_text).group(1)
+        delivery_tag = int(re.search(r"Delivery-Tag: (.+)", http_text).group(1))
 
-    # Extract the Correlation-ID, Reply-To, and Delivery-Tag headers using regex
-    correlation_id = re.search(r"Correlation-ID: (.+)", http_text).group(1)
-    reply_to = re.search(r"Reply-To: (.+)", http_text).group(1)
-    delivery_tag = int(re.search(r"Delivery-Tag: (.+)", http_text).group(1))
+        if correlation_id == "None" or reply_to == "None" or delivery_tag == "None":
+            print("Invalid HTTP request")
+            continue
 
-    channel.basic_publish(
-        exchange="",
-        routing_key=reply_to,
-        properties=pika.BasicProperties(correlation_id=correlation_id),
-        body=str(http_text),
-    )
-    channel.basic_ack(delivery_tag=delivery_tag)
+        channel = connection.channel()
+
+        channel.basic_publish(
+            exchange="",
+            routing_key=reply_to,
+            properties=pika.BasicProperties(correlation_id=correlation_id),
+            body=str(http_text),
+        )
+        channel.basic_ack(delivery_tag=delivery_tag)
+except KeyboardInterrupt:
+    pass

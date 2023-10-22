@@ -5,7 +5,12 @@ from flask import Flask, request
 import pika
 import uuid
 
+LINE_SEPARATOR = " "
+
 app = Flask(__name__)
+
+connection = pika.BlockingConnection(pika.ConnectionParameters(host="localhost"))
+channel = connection.channel()
 
 
 # Define a route to handle all incoming requests
@@ -14,6 +19,9 @@ app = Flask(__name__)
 )
 @app.route("/<path:path>", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 def handle_request(path):
+    global connection
+    global channel
+
     # Build up the raw HTTP request
     raw_request = request.method + " " + request.path + " HTTP/1.1\r\n"
     for key, value in request.headers.items():
@@ -29,8 +37,11 @@ def handle_request(path):
 
     correlation_id = str(uuid.uuid4())
 
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host="localhost"))
-    channel = connection.channel()
+    if connection.is_closed:
+        # If the connection is closed, start it again
+        connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+        channel = connection.channel()
+
     result = channel.queue_declare(queue="", exclusive=True)
     callback_queue = result.method.queue
 
@@ -40,7 +51,7 @@ def handle_request(path):
 
     channel.basic_publish(
         exchange="",
-        routing_key="rpc_queue",
+        routing_key=request.path,
         properties=pika.BasicProperties(
             reply_to=callback_queue,
             correlation_id=correlation_id,
