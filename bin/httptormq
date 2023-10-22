@@ -1,70 +1,85 @@
-#!/usr/bin/env python3
+#!/usr/bin/env node
 
-import sys
-from flask import Flask, request
-import pika
-import uuid
+const express = require('express');
+const amqp = require('amqplib/callback_api');
+const uuid = require('uuid');
 
-LINE_SEPARATOR = " "
+const app = express();
 
-app = Flask(__name__)
+const connectionUrl = 'amqp://localhost';
+const exchangeName = '';
+const queueName = '';
 
-connection = pika.BlockingConnection(pika.ConnectionParameters(host="localhost"))
-channel = connection.channel()
+app.use(express.json());
 
+app.all('*', (req, res) => {
+  console.log(req.method, req.path);
+  let rawRequest = `${req.method} ${req.path} HTTP/1.1\r\n`;
+  for (const [key, value] of Object.entries(req.headers)) {
+    rawRequest += `${key}: ${value}\r\n`;
+  }
+  rawRequest += '\r\n'; // TODO: append body
 
-# Define a route to handle all incoming requests
-@app.route(
-    "/", defaults={"path": ""}, methods=["GET", "POST", "PUT", "DELETE", "PATCH"]
-)
-@app.route("/<path:path>", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
-def handle_request(path):
-    global connection
-    global channel
+  let response = 'Timeout';
 
-    # Build up the raw HTTP request
-    raw_request = request.method + " " + request.path + " HTTP/1.1\r\n"
-    for key, value in request.headers.items():
-        raw_request += key + ": " + value + "\r\n"
-    raw_request += "\r\n" + request.get_data(as_text=True)
+  const correlationId = uuid.v4();
 
-    response = "Timeout"
+  amqp.connect(connectionUrl, (err, conn) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send('Internal Server Error');
+    }
 
-    def on_response(ch, method, props, body):
-        if correlation_id == props.correlation_id:
-            nonlocal response
-            response = body
+    conn.createChannel((err, ch) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send('Internal Server Error');
+      }
 
-    correlation_id = str(uuid.uuid4())
+      const timer = setTimeout(() => {
+        conn.close();
+        res.send(response);
+      }, 2000);
 
-    if connection.is_closed:
-        # If the connection is closed, start it again
-        connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
-        channel = connection.channel()
+      const onMessage = (msg) => {
+        if (msg.properties.correlationId === correlationId) {
+          response = msg.content.toString();
+          clearTimeout(timer);
+          ch.ack(msg);
+          conn.close();
+          res.send(response);
+        }
+      };
 
-    result = channel.queue_declare(queue="", exclusive=True)
-    callback_queue = result.method.queue
+      ch.assertQueue(queueName, { exclusive: true }, (err, q) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).send('Internal Server Error');
+        }
 
-    channel.basic_consume(
-        queue=callback_queue, on_message_callback=on_response, auto_ack=True
-    )
+        ch.consume(q.queue, onMessage, { noAck: false });
 
-    channel.basic_publish(
-        exchange="",
-        routing_key=request.path,
-        properties=pika.BasicProperties(
-            reply_to=callback_queue,
-            correlation_id=correlation_id,
-        ),
-        body=str(raw_request),
-    )
-    connection.process_data_events(time_limit=2)
-    return response
+        ch.publish(
+          exchangeName,
+          req.path,
+          Buffer.from(rawRequest),
+          {
+            correlationId,
+            replyTo: q.queue,
+          },
+          (err, ok) => {
+            if (err) {
+              console.error(err);
+              return res.status(500).send('Internal Server Error');
+            }
+          }
+        );
+      });
+    });
+  });
+});
 
-
-if __name__ == "__main__":
-    # Get the port number from the command line arguments
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 5000
-
-    # Start the Flask server
-    app.run(port=port)
+const port = process.argv[2] || 5000;
+app.listen(port, () => {
+  console.log(`Server listening on port ${port}`);
+});
