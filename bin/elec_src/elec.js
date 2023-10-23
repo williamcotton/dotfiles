@@ -86,7 +86,7 @@ app.whenReady().then(() => {
 
 // Listen for the stdout event from the renderer process.
 ipcMain.on("stdout", (event, data) => {
-  console.log(data);
+  process.stdout.write(data);
 });
 
 process.stdout.on("close", () => {
