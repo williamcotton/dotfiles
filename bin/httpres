@@ -14,24 +14,31 @@ try:
         http_text = ""
         while True:
             line = sys.stdin.readline()
-            if line == "\n":
+            if line == "%%%==========%%%\n":
                 break
             http_text += line
 
         # Extract the Correlation-ID, Reply-To, and Delivery-Tag headers using regex
-        correlation_id = re.search(r"Correlation-ID: (.+)", http_text).group(1)
-        reply_to = re.search(r"Reply-To: (.+)", http_text).group(1)
-        delivery_tag = int(re.search(r"Delivery-Tag: (.+)", http_text).group(1))
+        correlation_id_match = re.search(r"Correlation-ID: (.+)", http_text)
+        reply_to_match = re.search(r"Reply-To: (.+)", http_text)
+        delivery_tag_match = re.search(r"Delivery-Tag: (.+)", http_text)
 
-        if correlation_id == "None" or reply_to == "None" or delivery_tag == "None":
-            print("Invalid HTTP request")
+        if not correlation_id_match or not reply_to_match or not delivery_tag_match:
             continue
+
+        correlation_id = correlation_id_match.group(1)
+        reply_to = reply_to_match.group(1)
+        delivery_tag = int(delivery_tag_match.group(1))
 
         if connection.is_closed:
             # If the connection is closed, start it again
             connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
 
-        channel = connection.channel()
+        try:
+          channel = connection.channel()
+        except:
+          connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+          channel = connection.channel()
 
         channel.basic_publish(
             exchange="",

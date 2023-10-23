@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+
+import pika
+import sys
+
+connection = pika.BlockingConnection(
+    pika.ConnectionParameters(host="localhost")
+)
+
+body = sys.argv[1]
+
+try:
+    while True:
+        http_text = ""
+        while True:
+            line = sys.stdin.readline()
+            if line == "%%%----------%%%\n":
+                break
+            http_text += line
+
+        sys.stdout.write(http_text)
+        sys.stdout.write("%%%----------%%%\n")
+        sys.stdout.write(body)
+        sys.stdout.write("\n")
+        sys.stdout.write("%%%==========%%%\n")
+        sys.stdout.flush()
+except KeyboardInterrupt:
+    pass

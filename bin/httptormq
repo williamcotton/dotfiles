@@ -13,7 +13,6 @@ const queueName = '';
 app.use(express.json());
 
 app.all('*', (req, res) => {
-  console.log(req.method, req.path);
   let rawRequest = `${req.method} ${req.path} HTTP/1.1\r\n`;
   for (const [key, value] of Object.entries(req.headers)) {
     rawRequest += `${key}: ${value}\r\n`;
@@ -43,7 +42,8 @@ app.all('*', (req, res) => {
 
       const onMessage = (msg) => {
         if (msg.properties.correlationId === correlationId) {
-          response = msg.content.toString();
+          message = msg.content.toString();
+          const [request, response] = message.split("%%%----------%%%\n");
           clearTimeout(timer);
           ch.ack(msg);
           conn.close();
