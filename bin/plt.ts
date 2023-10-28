@@ -5,7 +5,7 @@ function plt<PltProgram extends string>(
 }
 
 type Plt<PltProgram extends string> =
-StripLeadingAndTrailingWhitespace<PltProgram> extends `[${infer Ys}]${infer RestWhitespace},${infer X}{${infer PltCmd}}`
+  StripLeadingAndTrailingWhitespace<PltProgram> extends `[${infer Ys}]${infer RestWhitespace},${infer X}{${infer PltCmd}}`
     ? RestWhitespace extends Whitespace | `${Whitespace | ""}${infer More}`
       ? {
           y_fieldnames: FlattenSplitByComma<Ys>;
@@ -14,11 +14,10 @@ StripLeadingAndTrailingWhitespace<PltProgram> extends `[${infer Ys}]${infer Rest
       : never
     : PltProgram extends `${infer Y},${infer X}{${infer PltCmd}}`
     ? {
-          y_fieldname: StripLeadingAndTrailingWhitespace<Y>;
-          x_fieldname: StripLeadingAndTrailingWhitespace<X>;
-        } & PltCommand<StripLeadingAndTrailingWhitespace<PltCmd>>
+        y_fieldname: StripLeadingAndTrailingWhitespace<Y>;
+        x_fieldname: StripLeadingAndTrailingWhitespace<X>;
+      } & PltCommand<StripLeadingAndTrailingWhitespace<PltCmd>>
     : never;
-
 
 type PltCommand<PltSpec> = PltSpec extends `${infer PltT} ${infer PltOpt}`
   ? {
@@ -26,41 +25,40 @@ type PltCommand<PltSpec> = PltSpec extends `${infer PltT} ${infer PltOpt}`
     } & PltOptions<PltT, PltOpt>
   : never;
 
-type PltOptions<PltT, PltOpt> =
-  PltT extends "plot" | "bar" | "stackbar"
-    ? PltOpt extends `${infer PltWidth}px${infer RestWhitespace}[${infer PltO}]` 
-      ? RestWhitespace extends Whitespace | `${Whitespace | ""}${infer More}`
-        ? {
-            width: ParseInt<PltWidth>;
-            options: SplitByCommaSpace<PltO>;
-          }
-        : never
-      : PltOpt extends `${infer PltWidth}px${Whitespace}${infer PltStyle} ${infer PltColor}`
-        ? {
-            width: ParseInt<PltWidth>;
-            draw_style: PltStyle;
-            color: PltColor;
-          }
-        : never
-    : PltT extends "highlight"
-      ? PltOpt extends `${infer PltStart} ${infer PltEnd} ${infer PltStyle} ${infer PltColor}`
-        ? {
-            start: PltStart;
-            end: PltEnd;
-            draw_style: PltStyle;
-            color: PltColor;
-          }
-        : never
-      : PltOpt extends `${infer GlobalOpt}[${infer PltO}]`
-        ? {
-            global_options: FlattenSplitByCommaSpace<GlobalOpt>;
-            options: SplitByCommaSpace<PltO>;
-          }
-        : PltOpt extends `${infer PltO}`
-          ? {
-              global_options: FlattenSplitByCommaSpace<PltO>;
-            }
-          : never;
+type PltOptions<PltT, PltOpt> = PltT extends "plot" | "bar" | "stackbar"
+  ? PltOpt extends `${infer PltWidth}px${infer RestWhitespace}[${infer PltO}]`
+    ? RestWhitespace extends Whitespace | `${Whitespace | ""}${infer More}`
+      ? {
+          width: ParseInt<PltWidth>;
+          options: SplitByCommaSpace<PltO>;
+        }
+      : never
+    : PltOpt extends `${infer PltWidth}px${Whitespace}${infer PltStyle} ${infer PltColor}`
+    ? {
+        width: ParseInt<PltWidth>;
+        draw_style: PltStyle;
+        color: PltColor;
+      }
+    : never
+  : PltT extends "highlight"
+  ? PltOpt extends `${infer PltStart} ${infer PltEnd} ${infer PltStyle} ${infer PltColor}`
+    ? {
+        start: PltStart;
+        end: PltEnd;
+        draw_style: PltStyle;
+        color: PltColor;
+      }
+    : never
+  : PltOpt extends `${infer GlobalOpt}[${infer PltO}]`
+  ? {
+      global_options: FlattenSplitByCommaSpace<GlobalOpt>;
+      options: SplitByCommaSpace<PltO>;
+    }
+  : PltOpt extends `${infer PltO}`
+  ? {
+      global_options: FlattenSplitByCommaSpace<PltO>;
+    }
+  : never;
 
 type PltPlotType<PltT> = PltT;
 
@@ -73,15 +71,26 @@ type SplitByComma<S> = S extends `${infer A}, ${infer B}`
   ? [A]
   : never;
 
+const splitByCommaTest1: SplitByComma<"a, b"> = ["a", "b"];
+const splitByCommaTest2: SplitByComma<"a, b, c"> = ["a", "b", "c"];
+
 // "a, b" => [a, b]
 // "a,b,c" => [a, b, c]
 // "a,b" => [a, b]
 // "a, b, c" => [a, b, c]
 type FlattenSplitByComma<S> = S extends `${infer A},${infer B}`
-  ? [StripLeadingAndTrailingWhitespace<A>, ...FlattenSplitByComma<StripLeadingAndTrailingWhitespace<B>>]
+  ? [
+      StripLeadingAndTrailingWhitespace<A>,
+      ...FlattenSplitByComma<StripLeadingAndTrailingWhitespace<B>>
+    ]
   : S extends `${infer A}`
   ? [StripLeadingAndTrailingWhitespace<A>]
   : never;
+
+const flattenSplitByCommaTest1: FlattenSplitByComma<"a, b"> = ["a", "b"];
+const flattenSplitByCommaTest2: FlattenSplitByComma<"a,b,c"> = ["a", "b", "c"];
+const flattenSplitByCommaTest3: FlattenSplitByComma<"a,b"> = ["a", "b"];
+const flattenSplitByCommaTest4: FlattenSplitByComma<"a, b, c"> = ["a", "b", "c"];
 
 // "a b" => [a, b]
 // "a b c" => [a, b, c]
@@ -91,13 +100,43 @@ type SplitBySpace<S> = S extends `${infer A} ${infer B}`
   ? [A]
   : never;
 
+const splitBySpaceTest1: SplitBySpace<"a b"> = ["a", "b"];
+const splitBySpaceTest2: SplitBySpace<"a b c"> = ["a", "b", "c"];
+
 // "a b, c d" => [[a, b], [c, d]]
 // "a b, c d, e f" => [[a, b], [c, d], [e, f]]
 type SplitByCommaSpace<S> = S extends `${infer A},${infer B}`
-  ? [[...SplitBySpace<StripLeadingAndTrailingWhitespace<A>>], ...SplitByCommaSpace<StripLeadingAndTrailingWhitespace<B>>]
+  ? [
+      [...SplitBySpace<StripLeadingAndTrailingWhitespace<A>>],
+      ...SplitByCommaSpace<StripLeadingAndTrailingWhitespace<B>>
+    ]
   : S extends `${infer A}`
   ? [[...SplitBySpace<StripLeadingAndTrailingWhitespace<A>>]]
   : never;
+
+const splitByCommaSpaceTest1: SplitByCommaSpace<"a b, c d"> = [
+  ["a", "b"],
+  ["c", "d"],
+];
+const splitByCommaSpaceTest2: SplitByCommaSpace<"a b, c d, e f"> = [
+  ["a", "b"],
+  ["c", "d"],
+  ["e", "f"],
+];
+
+const splitByCommaSpaceTest3: SplitByCommaSpace<"    a b, c d, e f, g h     "> = [
+  ["a", "b"],
+  ["c", "d"],
+  ["e", "f"],
+  ["g", "h"],
+];
+
+const splitByCommaSpaceTest4: SplitByCommaSpace<"    a    b   ,      c    d   ,        e       f      ,         g       h     "> = [
+  ["a", "b"],
+  ["c", "d"],
+  ["e", "f"],
+  ["g", "h"],
+];
 
 // "a b, c d" => [[a, b], [c, d]]
 // "a b, c d, e f" => [[a, b], [c, d], [e, f]]
@@ -107,13 +146,20 @@ type FlattenSplitByCommaSpace<S> = S extends `${infer A}, ${infer B}`
   ? [...SplitBySpace<A>]
   : never;
 
-type Whitespace = " " | "\t" | "\n" | "\r";
+const flattenSplitByCommaSpaceTest1: FlattenSplitByCommaSpace<"a b, c d"> = [
+  ["a", "b"],
+  ["c", "d"],
+];
+const flattenSplitByCommaSpaceTest2: FlattenSplitByCommaSpace<
+  "a b, c d, e f"
+> = [
+  ["a", "b"],
+  ["c", "d"],
+  ["e", "f"],
+];
 
-type AnyWhitespace<T extends string> = T extends `${infer Before}${infer Rest}`
-  ? Before extends Whitespace
-    ? AnyWhitespace<Rest>
-    : ""
-  : "";
+
+type Whitespace = " " | "\t" | "\n" | "\r";
 
 type StripWhitespace<S extends string> =
   S extends `${infer L}${Whitespace}${infer R}`
@@ -124,6 +170,10 @@ type StripWhitespace<S extends string> =
     ? StripWhitespace<T>
     : S;
 
+const stripWhitespaceTest1: StripWhitespace<"  a  "> = "a";
+const stripWhitespaceTest2: StripWhitespace<"  a  b   "> = "ab";
+const stripWhitespaceTest3: StripWhitespace<"  a  b   c  "> = "abc";
+
 type StripLeadingWhitespace<S extends string> =
   S extends `${Whitespace}${infer T}` ? StripLeadingWhitespace<T> : S;
 
@@ -133,7 +183,29 @@ type StripTrailingWhitespace<S extends string> =
 type StripLeadingAndTrailingWhitespace<S extends string> =
   StripTrailingWhitespace<StripLeadingWhitespace<S>>;
 
-type ParseInt<T> = T extends `${infer N extends number}` ? N : never
+const stripLeadingAndTrailingWhitespaceTest1: StripLeadingAndTrailingWhitespace<
+  "  a  "
+> = "a";
+
+const stripLeadingAndTrailingWhitespaceTest2: StripLeadingAndTrailingWhitespace<
+  "  a  b   "
+> = "a  b";
+
+
+type StripInternalMultipleWhitespace<S extends string> = S extends `${infer L}${Whitespace}${Whitespace}${infer R}`
+  ? StripInternalMultipleWhitespace<`${L} ${R}`>
+  : S;
+
+type StripLeadingAndTrailingAndInternalWhitespace<S extends string> =
+  StripInternalMultipleWhitespace<StripLeadingAndTrailingWhitespace<S>>;
+
+const stripLeadingAndTrailingAndInternalWhitespaceTest1: StripLeadingAndTrailingAndInternalWhitespace<
+  "    a    b   "> = "a b";
+
+const stripLeadingAndTrailingAndInternalWhitespaceTest2: StripLeadingAndTrailingAndInternalWhitespace<
+  "    a    b   c  "> = "a b c";
+
+type ParseInt<T> = T extends `${infer N extends number}` ? N : never;
 
 const plt1 = plt("one, date { plot 10px solid #d83 }");
 plt1.y_fieldname === "one";

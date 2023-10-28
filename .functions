@@ -11,6 +11,11 @@ function md() {
 	mkdir -p "$@" && cd "$@"
 }
 
+function dockerbash() {
+  local image="${1:-ubuntu}"
+  docker run -it --rm "$image" bash
+}
+
 # Use Git’s colored diff when available
 hash git &>/dev/null
 if [ $? -eq 0 ]; then
