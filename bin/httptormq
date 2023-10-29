@@ -38,7 +38,7 @@ app.all('*', (req, res) => {
       const timer = setTimeout(() => {
         conn.close();
         res.send(response);
-      }, 2000);
+      }, 200);
 
       const onMessage = (msg) => {
         if (msg.properties.correlationId === correlationId) {
