@@ -29,7 +29,9 @@ for i, row in enumerate(reader):
         if i == 0:
             ws.cell(row=i+1, column=j+1).fill = PatternFill(start_color='FFFFE0', end_color='FFFFE0', fill_type='solid')
 
+# Add filters to each column
+# filters = ws.auto_filter
+# filters.ref = ws.dimensions
+
 # Save Excel file to standard output
-buffer = BytesIO()
-wb.save(buffer)
-sys.stdout.buffer.write(buffer.getvalue())
+wb.save(sys.stdout.buffer)
