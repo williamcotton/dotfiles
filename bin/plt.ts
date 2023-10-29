@@ -80,11 +80,11 @@ const splitByCommaTest2: SplitByComma<"a, b, c"> = ["a", "b", "c"];
 // "a, b, c" => [a, b, c]
 type FlattenSplitByComma<S> = S extends `${infer A},${infer B}`
   ? [
-      StripLeadingAndTrailingWhitespace<A>,
-      ...FlattenSplitByComma<StripLeadingAndTrailingWhitespace<B>>
+      StripLeadingAndTrailingAndInternalWhitespace<A>,
+      ...FlattenSplitByComma<StripLeadingAndTrailingAndInternalWhitespace<B>>
     ]
   : S extends `${infer A}`
-  ? [StripLeadingAndTrailingWhitespace<A>]
+  ? [StripLeadingAndTrailingAndInternalWhitespace<A>]
   : never;
 
 const flattenSplitByCommaTest1: FlattenSplitByComma<"a, b"> = ["a", "b"];
@@ -107,11 +107,11 @@ const splitBySpaceTest2: SplitBySpace<"a b c"> = ["a", "b", "c"];
 // "a b, c d, e f" => [[a, b], [c, d], [e, f]]
 type SplitByCommaSpace<S> = S extends `${infer A},${infer B}`
   ? [
-      [...SplitBySpace<StripLeadingAndTrailingWhitespace<A>>],
-      ...SplitByCommaSpace<StripLeadingAndTrailingWhitespace<B>>
+      [...SplitBySpace<StripLeadingAndTrailingAndInternalWhitespace<A>>],
+      ...SplitByCommaSpace<StripLeadingAndTrailingAndInternalWhitespace<B>>
     ]
   : S extends `${infer A}`
-  ? [[...SplitBySpace<StripLeadingAndTrailingWhitespace<A>>]]
+  ? [[...SplitBySpace<StripLeadingAndTrailingAndInternalWhitespace<A>>]]
   : never;
 
 const splitByCommaSpaceTest1: SplitByCommaSpace<"a b, c d"> = [
@@ -138,6 +138,14 @@ const splitByCommaSpaceTest4: SplitByCommaSpace<"    a    b   ,      c    d   , 
   ["g", "h"],
 ];
 
+const splitByCommaSpaceTest5: SplitByCommaSpace<"    a    b   \n,      c    d   \n,        e       f      \n,         g       h     \n,     i    j   "> = [
+  ["a", "b"],
+  ["c", "d"],
+  ["e", "f"],
+  ["g", "h"],
+  ["i", "j"],
+];
+
 // "a b, c d" => [[a, b], [c, d]]
 // "a b, c d, e f" => [[a, b], [c, d], [e, f]]
 type FlattenSplitByCommaSpace<S> = S extends `${infer A}, ${infer B}`
@@ -158,8 +166,9 @@ const flattenSplitByCommaSpaceTest2: FlattenSplitByCommaSpace<
   ["e", "f"],
 ];
 
+type IgnoredCharacters = "\t" | "\n" | "\r";
 
-type Whitespace = " " | "\t" | "\n" | "\r";
+type Whitespace = " " | IgnoredCharacters;
 
 type StripWhitespace<S extends string> =
   S extends `${infer L}${Whitespace}${infer R}`
@@ -192,10 +201,30 @@ const stripLeadingAndTrailingWhitespaceTest2: StripLeadingAndTrailingWhitespace<
 > = "a  b";
 
 
-type StripInternalMultipleWhitespace<S extends string> = S extends `${infer L}${Whitespace}${Whitespace}${infer R}`
-  ? StripInternalMultipleWhitespace<`${L} ${R}`>
-  : S;
 
+// "a     b" => "a b"
+// "a     \nb" => "a b"
+type StripInternalMultipleWhitespace<S extends string> = 
+    S extends `${infer L}  ${infer R}` // two or more spaces
+    ? StripInternalMultipleWhitespace<`${L} ${R}`> 
+    : S extends `${infer L}${IgnoredCharacters}${IgnoredCharacters}${infer R}` // two or more newline characters
+    ? StripInternalMultipleWhitespace<`${L}\n${R}`>
+    : S extends `${infer L} ${IgnoredCharacters}${infer R}` // space followed by a newline
+    ? StripInternalMultipleWhitespace<`${L} ${R}`>
+    : S extends `${infer L}${IgnoredCharacters} ${infer R}` // newline followed by a space
+    ? StripInternalMultipleWhitespace<`${L} ${R}`>
+    : S;
+
+const stripInternalMultipleWhitespaceTest1: StripInternalMultipleWhitespace<
+  "a    b"
+> = "a b";
+const stripInternalMultipleWhitespaceTest2: StripInternalMultipleWhitespace<
+  "a    \nb"
+  > = "a b";
+
+// "    a    b   " => "a b"
+// "    a    b   c  " => "a b c"
+// "a    \nb" => "a b"
 type StripLeadingAndTrailingAndInternalWhitespace<S extends string> =
   StripInternalMultipleWhitespace<StripLeadingAndTrailingWhitespace<S>>;
 
@@ -205,7 +234,15 @@ const stripLeadingAndTrailingAndInternalWhitespaceTest1: StripLeadingAndTrailing
 const stripLeadingAndTrailingAndInternalWhitespaceTest2: StripLeadingAndTrailingAndInternalWhitespace<
   "    a    b   c  "> = "a b c";
 
+const stripLeadingAndTrailingAndInternalWhitespaceTest3: StripLeadingAndTrailingAndInternalWhitespace<
+  "a    \nb"> = "a b";
+
+// "10" => 10
 type ParseInt<T> = T extends `${infer N extends number}` ? N : never;
+
+const parseIntTest1: ParseInt<"10"> = 10;
+
+// ------------------------------ plt tests ------------------------------
 
 const plt1 = plt("one, date { plot 10px solid #d83 }");
 plt1.y_fieldname === "one";
