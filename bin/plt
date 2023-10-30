@@ -19,9 +19,9 @@
 #
 # ```ebnf
 # program = command*;
-# command = fields "{" display "}";
+# command = fields "{" action "}";
 # fields = FIELDNAME "," FIELDNAME* | "[" FIELDNAME "," FIELDNAME* "]" "," FIELDNAME;
-# display = "plot" style | "bar" style | "stackbar" multi_style;
+# action = "plot" style | "bar" style | "stackbar" multi_style;
 # style = WIDTH DRAW_STYLE COLOR;
 # multi_style = WIDTH "[" DRAW_STYLE COLOR "," DRAW_STYLE COLOR "]";
 # FIELDNAME = [a-zA-Z0-9_]+;
@@ -240,7 +240,7 @@ def t_FIELDNAME(t):
     r"[a-zA-Z_][a-zA-Z0-9_\/]*"  # field names must start with a letter or underscore
     if t.lexer.start_fields != True or t.lexer.fields_processed == True:
         t.type = reserved.get(t.value, "FIELDNAME")  # Check for reserved words
-    if t.lexer.start_display == True:
+    if t.lexer.start_action == True:
         t.type = reserved.get(t.value, "PLOTNAME")  # Check for reserved words
     return t
 
@@ -275,13 +275,13 @@ def t_RBRACKET(t):
 
 def t_LBRACE(t):
     r"\{"
-    t.lexer.start_display = True
+    t.lexer.start_action = True
     return t
 
 
 def t_RBRACE(t):
     r"\}"
-    t.lexer.start_display = False
+    t.lexer.start_action = False
     return t
 
 
@@ -328,7 +328,7 @@ command = {}
 
 
 def p_command(p):
-    """command : fields LBRACE display RBRACE"""
+    """command : fields LBRACE action RBRACE"""
     process_command_plot_style_title(command)
     process_command_fields(command)
     process_command_attributes(command)
@@ -336,7 +336,7 @@ def p_command(p):
     command.clear()
     p.lexer.start_fields = False
     p.lexer.fields_processed = False
-    p.lexer.start_display = False
+    p.lexer.start_action = False
     pass
 
 
@@ -345,7 +345,9 @@ def process_command_attributes(command):
         command.update(
             parsers[command["plot_style"]]["parser"]([0] + command["attributes"])
         )
-
+    del command["width"]
+    del command["draw_style"]
+    del command["color"]
     pass
 
 
@@ -411,8 +413,8 @@ def p_fields_error(p):
     error_message_and_exit(code, value, message, code.rfind(value, 0, p.lexer.lexpos))
 
 
-def p_display(p):
-    """display : PLOTNAME WIDTH LBRACKET multi_style RBRACKET
+def p_action(p):
+    """action : PLOTNAME WIDTH LBRACKET multi_style RBRACKET
     | HIGHLIGHT INTEGER INTEGER style
     | PLOTNAME WIDTH style
     | PLOTNAME arguments"""
@@ -479,6 +481,7 @@ def p_argument(p):
 
 def p_style(p):
     """style : DRAW_STYLE COLOR"""
+    print(p, file=sys.stderr)
     command.update({"draw_style": p[1], "color": p[2]})
     pass
 
@@ -486,6 +489,7 @@ def p_style(p):
 def p_multi_style(p):
     """multi_style : DRAW_STYLE COLOR ',' DRAW_STYLE COLOR
     | multi_style ',' DRAW_STYLE COLOR"""
+    print(p, file=sys.stderr)
     if len(p) == 5:
         p[1] += [{"draw_style": p[3], "color": p[4]}]
         command.update({"styles": p[1]})
@@ -527,7 +531,7 @@ parser = yacc.yacc()
 if args.plt:
     # Reset the lexer
     lexer.start_fields = False
-    lexer.start_display = False
+    lexer.start_action = False
     lexer.fields_processed = False
     # Parse the plt language string using the lexer and parser
     parser = yacc.yacc()

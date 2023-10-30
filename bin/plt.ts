@@ -16,14 +16,12 @@ type Plt<PltPrograms extends string> =
 
 type PltCommand<PltProgram extends string> =
   StripLeadingAndTrailingWhitespace<PltProgram> extends `[${infer Ys}]${infer RestWhitespace},${infer X}{${infer PltA}}`
-    ? RestWhitespace extends Whitespace | `${Whitespace | ""}${infer More}`
-      ? {
-          fields_title: FlattenSplitByCommaAsString<Ys>;
-          y_fieldnames: FlattenSplitByComma<Ys>;
-          x_fieldname: StripLeadingAndTrailingWhitespace<X>;
-          multi: true;
-        } & PltAction<StripLeadingAndTrailingWhitespace<PltA>>
-      : never
+    ? {
+        fields_title: FlattenSplitByCommaAsString<Ys>;
+        y_fieldnames: FlattenSplitByComma<Ys>;
+        x_fieldname: StripLeadingAndTrailingWhitespace<X>;
+        multi: true;
+      } & PltAction<StripLeadingAndTrailingWhitespace<PltA>>
     : PltProgram extends `${infer Y},${infer X}{${infer PltA}}`
     ? {
         y_fieldname: StripLeadingAndTrailingWhitespace<Y>;
@@ -40,12 +38,10 @@ type PltAction<PltSpec> = PltSpec extends `${infer PltT} ${infer PltO}`
 
 type PltOptions<PltT, PltOpt> = PltT extends "plot" | "bar" | "stackbar"
   ? PltOpt extends `${infer PltWidth}px${infer RestWhitespace}[${infer PltO}]`
-    ? RestWhitespace extends Whitespace | `${Whitespace | ""}${infer More}`
-      ? {
-          width: ParseInt<PltWidth>;
-          options: SplitByCommaSpace<PltO>;
-        }
-      : never
+    ? {
+        width: ParseInt<PltWidth>;
+        options: SplitByCommaSpace<PltO>;
+      }
     : PltOpt extends `${infer PltWidth}px${Whitespace}${infer PltStyle} ${infer PltColor}`
     ? {
         width: ParseInt<PltWidth>;
@@ -59,23 +55,26 @@ type PltOptions<PltT, PltOpt> = PltT extends "plot" | "bar" | "stackbar"
     : never
   : PltOpt extends `${infer GlobalOpt}[${infer PltO}]`
   ? {
-      global_options: FlattenSplitByCommaSpace<StripLeadingAndTrailingAndInternalWhitespace<GlobalOpt>>;
+      global_options: FlattenSplitByCommaSpace<
+        StripLeadingAndTrailingAndInternalWhitespace<GlobalOpt>
+      >;
       attributes: SplitByCommaSpace<PltO>;
     }
   : PltOpt extends `${infer PltO}`
   ? {
-    attributes: FlattenSplitByCommaSpace<PltO>;
+      attributes: FlattenSplitByCommaSpace<PltO>;
     }
   : never;
 
-type HighlightAttributes<PltOpts> = PltOpts extends `${infer PltStart} ${infer PltEnd} ${infer PltStyle} ${infer PltColor}`
-? {
-    start: PltStart;
-    end: PltEnd;
-    draw_style: PltStyle;
-    color: PltColor;
-  }
-  : never;
+type HighlightAttributes<PltOpts> =
+  PltOpts extends `${infer PltStart} ${infer PltEnd} ${infer PltStyle} ${infer PltColor}`
+    ? {
+        start: PltStart;
+        end: PltEnd;
+        draw_style: PltStyle;
+        color: PltColor;
+      }
+    : never;
 
 type PltPlotType<PltT> = PltT;
 
@@ -116,7 +115,9 @@ const flattenSplitByCommaTest4: FlattenSplitByComma<"a, b, c"> = [
 ];
 
 type FlattenSplitByCommaAsString<S> = S extends `${infer A},${infer B}`
-  ? `${StripLeadingAndTrailingAndInternalWhitespace<A>},${FlattenSplitByCommaAsString<StripLeadingAndTrailingAndInternalWhitespace<B>>}`
+  ? `${StripLeadingAndTrailingAndInternalWhitespace<A>},${FlattenSplitByCommaAsString<
+      StripLeadingAndTrailingAndInternalWhitespace<B>
+    >}`
   : S extends `${infer A}`
   ? StripLeadingAndTrailingAndInternalWhitespace<A>
   : never;
