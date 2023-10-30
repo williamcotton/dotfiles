@@ -176,6 +176,8 @@ get_project_database_name() {
   echo "$project_name" | sed 's/-/_/g'
 }
 
+alias dbname='get_project_database_name'
+
 mysql_project_database() {
   local project_database_name=$(get_project_database_name)
   mysql -u root "$project_database_name" "$@"
@@ -310,6 +312,14 @@ imgc() {
 tc() {
   touch "$@"
   code "$@"
+}
+
+xa() {
+  local args=()
+  for arg in "$@"; do
+    args+=("-I" "{}")
+  done
+  xargs "${args[@]}" "$@"
 }
 
 htmltopdf() {
