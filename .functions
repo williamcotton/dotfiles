@@ -322,6 +322,10 @@ xa() {
   xargs "${args[@]}" "$@"
 }
 
+qs() {
+  hxnormalize -x | hxselect -c "$@" | hxunent
+}
+
 htmltopdf() {
   local html
   local size="A4"
