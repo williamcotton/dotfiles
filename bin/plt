@@ -345,9 +345,6 @@ def process_command_attributes(command):
         command.update(
             parsers[command["plot_style"]]["parser"]([0] + command["attributes"])
         )
-    del command["width"]
-    del command["draw_style"]
-    del command["color"]
     pass
 
 
@@ -481,7 +478,6 @@ def p_argument(p):
 
 def p_style(p):
     """style : DRAW_STYLE COLOR"""
-    print(p, file=sys.stderr)
     command.update({"draw_style": p[1], "color": p[2]})
     pass
 
@@ -489,7 +485,6 @@ def p_style(p):
 def p_multi_style(p):
     """multi_style : DRAW_STYLE COLOR ',' DRAW_STYLE COLOR
     | multi_style ',' DRAW_STYLE COLOR"""
-    print(p, file=sys.stderr)
     if len(p) == 5:
         p[1] += [{"draw_style": p[3], "color": p[4]}]
         command.update({"styles": p[1]})
