@@ -1,4 +1,5 @@
-#!/usr/bin/env dotnet fsi
+#!/usr/bin/env dotnet fsi --langversion:preview
+#nowarn "57"
 
 type PltCommand =
     | Multi of string list * string * PltAction
