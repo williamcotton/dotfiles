@@ -1,4 +1,4 @@
-export PATH="/usr/local/bin:/usr/local/sbin:~/bin:~/dotfiles/bin:$PATH"
+export PATH="/usr/local/bin:/usr/local/sbin:$HOME/bin:$HOME/dotfiles/bin:$PATH"
 
 # Language configuration
 export LANG=en_US.UTF-8
