@@ -1,6 +1,17 @@
-export PATH="/usr/local/bin:/usr/local/sbin:/usr/local/share/npm/bin:~/bin:$PATH"
-export EDITOR='/usr/local/bin/code -a -w'
+export PATH="/usr/local/bin:/usr/local/sbin:~/bin:~/dotfiles/bin:$PATH"
 
+# Language configuration
+export LANG=en_US.UTF-8
+export LC_ALL="en_US.UTF-8"
+
+# Editor configuration
+if [[ -n $SSH_CONNECTION ]]; then
+  export EDITOR='vim'
+else
+  export EDITOR='/usr/local/bin/code -a -w'
+fi
+
+# Color configuration
 export LS_OPTIONS='--color=auto'
 export CLICOLOR='Yes'
 export LSCOLORS='Bxgxfxfxcxdxdxhbadbxbx'
@@ -23,3 +34,7 @@ export HISTORY_IGNORE="(ls|cd|pwd|exit|cd ..)"
 
 # npm token
 [ -s "$HOME/.npmrc" ] && export NPM_TOKEN=$(cat ~/.npmrc | sed -E -n 's/.*_authToken=(.*)/\1/p')
+
+# .NET configuration
+export DOTNET_CLI_TELEMETRY_OPTOUT=1
+export DOTNET_NEW_PREFERRED_LANG="F#"

@@ -1,6 +1,3 @@
-# If you come from bash you might have to change your $PATH.
-export PATH=$HOME/bin:$PATH:$HOME/dotfiles/bin
-
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
 
@@ -78,17 +75,6 @@ source $ZSH/oh-my-zsh.sh
 
 # export MANPATH="/usr/local/man:$MANPATH"
 
-# You may need to manually set your language environment
-export LANG=en_US.UTF-8
-export LC_ALL="en_US.UTF-8"
-
-# Preferred editor for local and remote sessions
-if [[ -n $SSH_CONNECTION ]]; then
-  export EDITOR='vim'
-else
-  export EDITOR='/usr/local/bin/code -a -w'
-fi
-
 # Compilation flags
 # export ARCHFLAGS="-arch x86_64"
 
@@ -101,17 +87,23 @@ fi
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 
+# Autocomplete configuration
 autoload -Uz compinit
 compinit
 
+# Load SCM Breeze
 [ -s "$HOME/.scm_breeze/scm_breeze.sh" ] && source "$HOME/.scm_breeze/scm_breeze.sh"
 
+# ZSH configuration
 ZSHRC_FILE=${(%):-%N}
 
+# Get the directory of the current file
 DIRECTORY=`dirname $ZSHRC_FILE`
 
+# Load the configuration files
 . "$DIRECTORY/.aliases"
 . "$DIRECTORY/.exports"
 . "$DIRECTORY/.functions"
 
+# ASDf configuration
 [ -s "$HOME/.asdf/asdf.sh" ] && . $HOME/.asdf/asdf.sh
