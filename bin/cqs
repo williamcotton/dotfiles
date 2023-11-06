@@ -1,0 +1,24 @@
+#!/usr/bin/env node
+
+// Require necessary libraries
+const cheerio = require('cheerio');
+
+// Get the selector from the command-line arguments
+const selector = process.argv[2];
+
+// Prepare to get the HTML from STDIN
+let html = '';
+
+process.stdin.on('data', chunk => {
+  html += chunk;
+});
+
+process.stdin.on('end', () => {
+  // Load the HTML into cheerio
+  const $ = cheerio.load(html);
+
+  // Select the elements and log their contents
+  $(selector).each((index, element) => {
+    console.log($(element).text());
+  });
+});
