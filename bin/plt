@@ -749,7 +749,7 @@ with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
 # Execute the temporary file using subprocess.run()
 try:
     result = subprocess.run(
-        ["python3", temp_file],
+        [sys.executable, temp_file],
         stdin=sys.stdin,
         stdout=sys.stdout,
         stderr=subprocess.PIPE,
