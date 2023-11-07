@@ -1,0 +1,12 @@
+#!/bin/zsh
+
+for lang in $(asdf plugin-list); do
+  echo "Checking $lang..."
+  latest_version=$(asdf list-all "$lang" | grep -v "-" | tail -1)
+  installed_version=$(asdf current "$lang" | awk '{print $2}')
+  if [ "$latest_version" != "$installed_version" ]; then
+    echo "$lang is out of date. Latest version is $latest_version, but $installed_version is installed."
+  else
+    echo "$lang is up to date."
+  fi
+done
