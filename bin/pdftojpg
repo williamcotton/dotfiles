@@ -1,0 +1,17 @@
+#!/bin/zsh
+
+# Check if an argument is provided
+if [ $# -eq 0 ]; then
+    echo "No arguments provided. Please provide a PDF file path."
+    exit 1
+fi
+
+# Get the PDF file path
+pdf_path=$1
+
+# Extract the filename without the extension
+filename=$(basename "$pdf_path")
+prefix=${filename%.*}
+
+# Convert the PDF to a JPG image with the same prefix in the current directory
+convert -density 300 "$pdf_path" -quality 100 "${prefix}.jpg"
