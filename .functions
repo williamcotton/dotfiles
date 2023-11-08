@@ -311,7 +311,12 @@ imgc() {
 
 tc() {
   touch "$@"
-  code "$@"
+  code -a -w "$@"
+}
+
+tce() {
+  tc "$@"
+  chmod +x "$@"
 }
 
 xa() {
