@@ -1,0 +1,16 @@
+# Python configuration
+export PATH="$HOME/miniforge3/bin:$PATH"
+
+# .NET configuration
+. ~/.asdf/plugins/dotnet-core/set-dotnet-home.zsh
+
+# ZSH configuration
+ZSHEXEC_FILE=${(%):-%N}
+
+# Get the directory of the current file
+DIRECTORY=`dirname $ZSHEXEC_FILE`
+
+# Load the configuration files
+. "$DIRECTORY/.aliases"
+. "$DIRECTORY/.exports"
+. "$DIRECTORY/.functions"
