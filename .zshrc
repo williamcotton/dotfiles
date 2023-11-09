@@ -105,5 +105,5 @@ DIRECTORY=`dirname $ZSHRC_FILE`
 . "$DIRECTORY/.exports"
 . "$DIRECTORY/.functions"
 
-# ASDf configuration
+# ASDF configuration
 [ -s "$HOME/.asdf/asdf.sh" ] && . $HOME/.asdf/asdf.sh
