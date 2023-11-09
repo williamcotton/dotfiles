@@ -311,7 +311,7 @@ imgc() {
 
 tc() {
   touch "$@"
-  code -a -w "$@"
+  code "$@"
 }
 
 tce() {
