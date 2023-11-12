@@ -13,7 +13,7 @@ const queueName = '';
 app.use(express.json());
 
 app.all('*', (req, res) => {
-  let rawRequest = `${req.method} ${req.path} HTTP/1.1\r\n`;
+  let rawRequest = `${req.method} ${req.originalUrl} HTTP/1.1\r\n`;
   for (const [key, value] of Object.entries(req.headers)) {
     rawRequest += `${key}: ${value}\r\n`;
   }
