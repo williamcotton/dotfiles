@@ -1,23 +1,10 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
-import os
 import sys
-import openai
+from llmtools import embedding
 
 # Read from STDIN
 input_text = sys.stdin.read().strip()
 
-# Set OpenAI API key
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
-# Create embedding
-response = openai.Embedding.create(
-  model="text-embedding-ada-002",
-  input=input_text,
-  encoding_format="float"
-)
-
-embeddings = response['data'][0]['embedding']
-
 # Print embedding
-print(embeddings)
+print(embedding(input_text))
