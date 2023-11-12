@@ -1,9 +1,3 @@
-# Python configuration
-export PATH="$HOME/miniforge3/bin:$PATH"
-
-# .NET configuration
-. ~/.asdf/plugins/dotnet-core/set-dotnet-home.zsh
-
 # ZSH configuration
 ZSHEXEC_FILE=${(%):-%N}
 
