@@ -41,5 +41,7 @@ export DOTNET_NEW_PREFERRED_LANG="F#"
 
 export PYTHONPATH="$HOME/dotfiles/python"
 export RUBYPATH="$HOME/dotfiles/ruby"
+export NODE_PATH="$HOME/dotfiles/node"
 
 export RUBYOPT="-r $HOME/dotfiles/.rubyrc"
+
