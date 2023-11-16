@@ -1,5 +1,4 @@
 module.exports = {
-  hello: function() {
-    console.log('hello');
-  }
+  range: (start, end) => 
+    Array.from({length: end - start + 1}, (_, i) => start + i),
 }

@@ -208,6 +208,10 @@ tce() {
   chmod +x "$@"
 }
 
+js () {
+  node -e "const u = require('utils'); console.log($1);"
+}
+
 xa() {
   local args=()
   for arg in "$@"; do
