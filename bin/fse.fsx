@@ -28,18 +28,18 @@ Ok "one,two,three,date
         imgcat"
     |> echo
     
-Ok "Host=localhost;Database=test"
+Ok "Host=localhost;Database=express-test"
     |> connectToDatabase
-    |> executeQuery "SELECT title FROM documents LIMIT 10"
+    |> executeQuery "SELECT name FROM employees"
     |> readResults
     |> convertToJson
     |> echo
 
 express
     |> get "/hello" (fun _ -> 
-        Ok "Host=localhost;Database=test"
+        Ok "Host=localhost;Database=express-test"
             |> connectToDatabase
-            |> executeQuery "SELECT title FROM documents LIMIT 10"
+            |> executeQuery "SELECT name FROM employees"
             |> readResults
             |> convertToJson
             |> function

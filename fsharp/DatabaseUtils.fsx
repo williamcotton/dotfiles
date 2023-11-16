@@ -48,7 +48,6 @@ let convertToJsonBase results =
 let convertToJson results =
     match results with
     | Ok r -> Ok (convertToJsonBase r)
-<<<<<<< HEAD
     | Error e -> Error e
 
 // A utility function to execute a database query and return results
@@ -81,6 +80,3 @@ let mysqlQuery (connection: MySqlConnection) (query: string) (parameters: (strin
         // Log other exceptions
         printfn "Unexpected error: %s" ex.Message
         None
-=======
-    | Error e -> Error e
->>>>>>> 866e225 (f# updates)
