@@ -367,3 +367,7 @@ lawrence() {
 
 # Create an alias for the lawrence function
 alias ren="lawrence"
+
+function paths() {
+  echo $PATH | awk -F: '{ for (i = 1; i <= NF; i++) print $i }'
+}
