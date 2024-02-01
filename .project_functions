@@ -20,6 +20,8 @@ export PYTHONPATH="$PRJ_DIR/lib:$PYTHONPATH"
 
 get_project_name() { echo "$PRJ_NAME" }
 
+alias pcd='cd "$PRJ_DIR"'
+
 get_project_database_name() {
   local project_name=$(get_project_name)
   local db_file="$HOME/Projects/${project_name}/.db"
@@ -40,7 +42,6 @@ mysql_project_database() {
   mysql -u root "$project_database_name" "$@"
 }
 
-alias mpd='mysql_project_database'
 alias mydb='mysql_project_database'
 
 postgres_project_database() {
