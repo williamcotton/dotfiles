@@ -2,21 +2,57 @@
 
 import argparse
 import csv
-import mysql.connector
 import sys
+import re
+
+# Import database modules
+import mysql.connector
+import psycopg2
+from psycopg2 import sql
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+
+
+def snake_case_converter(header_name):
+    # Replace spaces and non-alphanumeric characters (except underscores) with underscores
+    # and convert to lowercase to achieve snake_case
+    return re.sub(r"\W+", "_", header_name).lower()
+
 
 # Parse command-line arguments
-parser = argparse.ArgumentParser(description="Import a CSV/TSV file into a MySQL database")
-parser.add_argument("database", help="the name of the MySQL database to use")
+parser = argparse.ArgumentParser(
+    description="Import a CSV/TSV file into a MySQL or PostgreSQL database"
+)
+parser.add_argument("database", help="the name of the database to use")
 parser.add_argument("table", help="the name of the table to create in the database")
 parser.add_argument("--tsv", action="store_true", help="use TSV format instead of CSV")
-parser.add_argument("--no-create", action="store_true", help="do not try to create the table")
-parser.add_argument("--varchar", type=int, default=255, help="the length of VARCHAR columns")
+parser.add_argument(
+    "--no-create", action="store_true", help="do not try to create the table"
+)
+parser.add_argument(
+    "--varchar", type=int, default=255, help="the length of VARCHAR columns"
+)
+parser.add_argument(
+    "--db-type",
+    choices=["mysql", "postgres"],
+    default="mysql",
+    help="the type of database (mysql or postgres)",
+)
 args = parser.parse_args()
 
-# Connect to the MySQL server
-cnx = mysql.connector.connect(host="127.0.0.1", database=args.database)
-cursor = cnx.cursor()
+# Connect to the database server
+if args.db_type == "mysql":
+    cnx = mysql.connector.connect(host="127.0.0.1", database=args.database)
+    cursor = cnx.cursor()
+elif args.db_type == "postgres":
+    cnx = psycopg2.connect(dbname=args.database, host="127.0.0.1")
+    cnx.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    cursor = cnx.cursor()
+else:
+    print(
+        "Unsupported database type. Please choose either 'mysql' or 'postgres'.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
 
 # Read the CSV/TSV file from stdin
 if args.tsv:
@@ -28,21 +64,73 @@ else:
 headers = next(reader)
 
 if not args.no_create:
-    # Create the table in the database
-    columns = ", ".join("`{}` VARCHAR({})".format(header, args.varchar) for header in headers)
-    create_table_query = "CREATE TABLE `{}` ({})".format(args.table, columns)
-    cursor.execute(create_table_query)
+    if args.db_type == "mysql":
+        columns = ", ".join(
+            "`{}` VARCHAR({})".format(snake_case_converter(header), args.varchar)
+            for header in headers
+        )
+        create_table_query = "CREATE TABLE `{}` ({})".format(args.table, columns)
+    elif args.db_type == "postgres":
+        columns = [
+            sql.SQL("{} VARCHAR({})").format(
+                sql.Identifier(snake_case_converter(header)), sql.Literal(args.varchar)
+            )
+            for header in headers
+        ]
+        create_table_query = sql.SQL("CREATE TABLE {} ({})").format(
+            sql.Identifier(args.table), sql.SQL(", ").join(columns)
+        )
+    else:
+        print(
+            "Unsupported database type. Please choose either 'mysql' or 'postgres'.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    if args.db_type == "mysql":
+        cursor.execute(create_table_query)
+    elif args.db_type == "postgres":
+        cursor.execute(create_table_query.as_string(cnx))
 
 # Insert the data into the table
 for row in reader:
-    values = ", ".join("'{}'".format(value) for value in row)
-    insert_query = "INSERT INTO `{}` ({}) VALUES ({})".format(args.table, ", ".join("`{}`".format(header) for header in headers), values)
+    # Trim string values in the row to args.varchar length
+    trimmed_row = [
+        value[: args.varchar] if isinstance(value, str) else value for value in row
+    ]
+    placeholders = ", ".join(
+        ["%s"] * len(trimmed_row)
+    )  # Placeholder for each CSV column
+
+    if args.db_type == "mysql":
+        insert_query = "INSERT INTO `{}` ({}) VALUES ({})".format(
+            args.table,
+            ", ".join(
+                "`{}`".format(snake_case_converter(header)) for header in headers
+            ),
+            placeholders,
+        )
+    elif args.db_type == "postgres":
+        column_identifiers = sql.SQL(", ").join(
+            [sql.Identifier(snake_case_converter(header)) for header in headers]
+        )
+        insert_query = sql.SQL("INSERT INTO {} ({}) VALUES ({})").format(
+            sql.Identifier(args.table),
+            column_identifiers,
+            sql.SQL(placeholders),  # Use the placeholders for the parameterized query
+        )
+
+    # Execute the insert query with the trimmed row data
     try:
-        cursor.execute(insert_query)
+        if args.db_type == "mysql":
+            cursor.execute(insert_query, trimmed_row)
+        elif args.db_type == "postgres":
+            cursor.execute(insert_query, trimmed_row)
     except Exception as e:
         print("Error inserting row:", file=sys.stderr)
-        print(insert_query, file=sys.stderr)
         print(e, file=sys.stderr)
+        # Optionally, print the failing row for debugging purposes
+        print("Failing row data:", trimmed_row, file=sys.stderr)
 
 # Commit the changes and close the connection
 cnx.commit()
