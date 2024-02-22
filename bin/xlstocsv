@@ -1,0 +1,22 @@
+#!/usr/bin/env python3
+
+import sys
+import csv
+import xlrd
+from io import BytesIO
+
+# Read Excel file from standard input
+buffer = BytesIO(sys.stdin.buffer.read())
+
+# Open the workbook
+wb = xlrd.open_workbook(file_contents=buffer.getvalue())
+
+# Select the first sheet
+ws = wb.sheet_by_index(0)
+
+# Write values to standard output as tab-separated values
+writer = csv.writer(sys.stdout)
+
+for row_idx in range(ws.nrows):
+    row = ws.row_values(row_idx)
+    writer.writerow(row)
