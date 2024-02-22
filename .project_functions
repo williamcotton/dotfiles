@@ -63,6 +63,13 @@ mysc() {
   mysql_project_database -e "$last_command" | ascii-table
 }
 
+myscsv() {
+  local scratch_file="$HOME/Projects/$(get_project_name)/scratch.sql"
+  local last_command=$(get_last_command "$scratch_file")
+  echo "$last_command" >&2
+  mysql_project_database -e "$last_command" | tsvtocsv
+}
+
 pgsc() {
   local scratch_file="$HOME/Projects/$(get_project_name)/scratch.sql"
   local last_command=$(get_last_command "$scratch_file")
