@@ -228,6 +228,18 @@ function jqr() {
     echo $(echo $1 | jq -r $2)
 }
 
+bcf() {
+    if [ $# -eq 0 ]; then
+        # If no arguments are provided, read from standard input
+        while IFS= read -r line; do
+            echo "scale=8; $line" | bc
+        done
+    else
+        # If arguments are provided, process them directly
+        echo "scale=8; $@" | bc
+    fi
+}
+
 htmltopdf() {
   local html
   local size="A4"
