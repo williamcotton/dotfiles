@@ -639,14 +639,14 @@ plt.savefig(sys.stdout.buffer, format='png')
 
 ### plot_template.py ##########################################################
 plot_template_str: sourcetypes.python = """
-y_{{ command['y_fieldname'] }}_value = [float(y) for y in data['{{ command['y_fieldname'] }}']]
+y_{{ command['y_fieldname'] }}_value = [float(y) if y is not None else 0.0 for y in data['{{ command['y_fieldname'] }}']]
 width = 0.02
 ax.plot(x_value, y_{{ command['y_fieldname'] }}_value, color='{{ command['color'] }}', linestyle='{{ command['draw_style'] }}', linewidth={{ command['width'] }})
 """
 
 ### bar_template.py ###########################################################
 bar_template_str: sourcetypes.python = """
-y_{{ command['y_fieldname'] }}_value = [float(y) for y in data['{{ command['y_fieldname'] }}']]
+y_{{ command['y_fieldname'] }}_value = [float(y) if y is not None else 0.0 for y in data['{{ command['y_fieldname'] }}']]
 draw_style = '{{ command['draw_style'] }}'
 if draw_style == 'solid':
     hatch = ''
@@ -659,7 +659,7 @@ ax.bar(x_value, y_{{ command['y_fieldname'] }}_value, hatch=hatch, color='{{ com
 
 ## multi_bar_template.py ######################################################
 multi_bar_template_str: sourcetypes.python = """
-y_values = [np.array([float(y) for y in data[field]]) for field in {{ command['y_fieldnames'] }}]
+y_values = [np.array([float(y) if y is not None else 0.0 for y in data[field]]) for field in {{ command['y_fieldnames'] }}]
 styles = {{ command['styles'] }}
 width = {{ command['width'] / 50 }}
 ax.set_xticks(x + width, x_value)
@@ -678,7 +678,7 @@ for index, field in enumerate({{ command['y_fieldnames'] }}):
 
 ## multi_stackbar_template.py #################################################
 multi_stackbar_template_str: sourcetypes.python = """
-y_values = [np.array([float(y) for y in data[field]]) for field in {{ command['y_fieldnames'] }}]
+y_values = [np.array([float(y) if y is not None else 0.0 for y in data[field]]) for field in {{ command['y_fieldnames'] }}]
 styles = {{ command['styles'] }}
 width = {{ command['width'] / 50 }}
 bottom = np.zeros(3)
