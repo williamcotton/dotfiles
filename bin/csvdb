@@ -96,7 +96,7 @@ if not args.no_create:
 for row in reader:
     # Trim string values in the row to args.varchar length
     trimmed_row = [
-        value[: args.varchar] if isinstance(value, str) else value for value in row
+        value[:args.varchar] if isinstance(value, str) else value for value in row
     ]
     placeholders = ", ".join(
         ["%s"] * len(trimmed_row)
