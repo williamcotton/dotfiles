@@ -45,3 +45,6 @@ export NODE_PATH="$HOME/dotfiles/node"
 
 export RUBYOPT="-r $HOME/dotfiles/.rubyrc"
 
+export ASDF_GOLANG_MOD_VERSION_ENABLED=true
+
+export LYNX_CFG=$HOME/dotfiles/.lynxrc
