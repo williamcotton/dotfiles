@@ -28,19 +28,19 @@ Ok "one,two,three,date
         imgcat"
     |> echo
     
-Ok "Host=localhost;Database=express-test"
-    |> connectToDatabase
-    |> executeQuery "SELECT name FROM employees"
-    |> readResults
+Ok "Host=localhost;Database=test"
+    |> connectToPostgresDatabase
+    |> executePostgresQuery "SELECT title FROM documents LIMIT 10"
+    |> readPostgresResults
     |> convertToJson
     |> echo
 
 express
     |> get "/hello" (fun _ -> 
-        Ok "Host=localhost;Database=express-test"
-            |> connectToDatabase
-            |> executeQuery "SELECT name FROM employees"
-            |> readResults
+        Ok "Host=localhost;Database=test"
+            |> connectToPostgresDatabase
+            |> executePostgresQuery "SELECT title FROM documents LIMIT 10"
+            |> readPostgresResults
             |> convertToJson
             |> function
                 | Ok json -> json

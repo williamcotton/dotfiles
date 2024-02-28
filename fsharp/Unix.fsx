@@ -10,6 +10,9 @@ type CommandResult =
     StandardOutput: string
     StandardError: string }
 
+let base64ToHtmlImg (base64Img) =
+    $"<img src=\"data:image/png;base64,{base64Img}\" />"
+
 let executeCommand executable args =
   async {
     let! ct = Async.CancellationToken
