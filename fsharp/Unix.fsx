@@ -1,4 +1,4 @@
-#!/usr/bin/env dotnet fsi
+module Unix
 
 open System
 open System.Diagnostics
@@ -72,3 +72,6 @@ let commandFunc commandName pattern (input : Result<string, string>) =
 
 let grep = commandFunc "grep"
 let awk = commandFunc "awk"
+
+let plt64 pltProgram =
+    zsh $"plt '{pltProgram}' | tee >(imgc > /dev/null) | base64"
