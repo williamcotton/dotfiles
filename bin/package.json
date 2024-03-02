@@ -1,22 +1,22 @@
 {
   "dependencies": {
-    "@electron/remote": "^2.0.12",
-    "@types/react": "^18.2.36",
+    "@electron/remote": "^2.1.2",
+    "@types/react": "^18.2.61",
     "amqplib": "^0.10.3",
     "cheerio": "^1.0.0-rc.12",
-    "csv-parse": "^5.5.2",
-    "express": "^4.18.2",
+    "csv-parse": "^5.5.5",
+    "express": "^4.18.3",
     "minimist": "^1.2.8",
-    "npm-check-updates": "^16.14.6",
-    "puppeteer": "^21.5.0",
+    "npm-check-updates": "^16.14.15",
+    "puppeteer": "^22.3.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "tmp": "^0.2.1",
-    "ts-node": "^10.9.1",
+    "tmp": "^0.2.3",
+    "ts-node": "^10.9.2",
     "uuid": "^9.0.1",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
-    "@types/node": "^20.8.10"
+    "@types/node": "^20.11.24"
   }
 }
