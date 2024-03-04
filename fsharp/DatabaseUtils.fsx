@@ -104,6 +104,7 @@ let connectToMysqlDatabase connectionString =
 
 let executeMysqlQueryBase query connection =
     let command = new MySqlCommand(query, connection)
+    command.CommandTimeout <- 360
     command.ExecuteReader()
 
 let executeMysqlQuery query connection =
