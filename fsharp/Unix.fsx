@@ -71,7 +71,7 @@ let commandFunc commandName pattern (input : Result<string, string>) =
   | Error e -> Error e
 
 let grep = commandFunc "grep"
-let awk = commandFunc "awk"
+let awk = commandFunc "gawk"
 
 let plt64 pltProgram =
     zsh $"plt '{pltProgram}' | tee >(imgc > /dev/null) | base64"

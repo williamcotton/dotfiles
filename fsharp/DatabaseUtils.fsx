@@ -13,9 +13,7 @@ let convertToJsonBase results =
     (JsonConvert.SerializeObject(results, Formatting.Indented))
 
 let convertToJson results =
-    match results with
-    | Ok r -> Ok (convertToJsonBase r)
-    | Error e -> Error e
+    Result.map convertToJsonBase results
 
 let convertToCsvBase (results: List<Dictionary<string, obj>>) =
     let csv = new System.Text.StringBuilder()
@@ -27,9 +25,7 @@ let convertToCsvBase (results: List<Dictionary<string, obj>>) =
     csv.ToString()
 
 let convertToCsv results =
-    match results with
-    | Ok r -> Ok (convertToCsvBase r)
-    | Error e -> Error e
+    Result.map convertToCsvBase results
 
 let convertToHtmlBase (results: List<Dictionary<string, obj>>) =
     let html = new System.Text.StringBuilder()
@@ -54,9 +50,7 @@ let convertToHtmlBase (results: List<Dictionary<string, obj>>) =
     html.ToString()
 
 let convertToHtml results =
-    match results with
-    | Ok r -> Ok (convertToHtmlBase r)
-    | Error e -> Error e
+    Result.map convertToHtmlBase results
 
 let connectToPostgresDatabaseBase connectionString =
     let connection = new NpgsqlConnection(connectionString)
@@ -64,18 +58,14 @@ let connectToPostgresDatabaseBase connectionString =
     connection
 
 let connectToPostgresDatabase connectionString =
-    match connectionString with
-    | Ok c -> Ok (connectToPostgresDatabaseBase c)
-    | Error e -> Error e
+    Result.map connectToPostgresDatabaseBase connectionString
 
 let executePostgresQueryBase query connection =
     let command = new NpgsqlCommand(query, connection)
     (command.ExecuteReader() :?> NpgsqlDataReader)
 
 let executePostgresQuery query connection =
-    match connection with
-    | Ok c -> Ok (executePostgresQueryBase query c)
-    | Error e -> Error e
+    Result.map (fun c -> executePostgresQueryBase query c) connection
 
 let readPostgresResultsBase (reader: NpgsqlDataReader) =
     let results = new List<Dictionary<string, obj>>()
@@ -88,9 +78,7 @@ let readPostgresResultsBase (reader: NpgsqlDataReader) =
     results
 
 let readPostgresResults reader =
-    match reader with
-    | Ok r -> Ok (readPostgresResultsBase r)
-    | Error e -> Error e
+    Result.map readPostgresResultsBase reader
 
 let connectToMysqlDatabaseBase connectionString =
     let connection = new MySqlConnection(connectionString)
@@ -98,9 +86,7 @@ let connectToMysqlDatabaseBase connectionString =
     connection
 
 let connectToMysqlDatabase connectionString =
-    match connectionString with
-    | Ok c -> Ok (connectToMysqlDatabaseBase c)
-    | Error e -> Error e
+    Result.map connectToMysqlDatabaseBase connectionString
 
 let executeMysqlQueryBase query connection =
     let command = new MySqlCommand(query, connection)
@@ -108,9 +94,7 @@ let executeMysqlQueryBase query connection =
     command.ExecuteReader()
 
 let executeMysqlQuery query connection =
-    match connection with
-    | Ok c -> Ok (executeMysqlQueryBase query c)
-    | Error e -> Error e
+    Result.map (fun c -> executeMysqlQueryBase query c) connection
 
 let readMysqlResultsBase (reader: MySqlDataReader) =
     let results = new List<Dictionary<string, obj>>()
@@ -123,6 +107,25 @@ let readMysqlResultsBase (reader: MySqlDataReader) =
     results
 
 let readMysqlResults reader =
-    match reader with
-    | Ok r -> Ok (readMysqlResultsBase r)
-    | Error e -> Error e
+    Result.map readMysqlResultsBase reader
+
+let executeMysqlQueryAndReadResultsBase connectionString query =
+    use connection = new MySqlConnection(connectionString)
+    connection.Open()
+
+    use command = new MySqlCommand(query, connection)
+    command.CommandTimeout <- 360
+
+    use reader = command.ExecuteReader()
+
+    let results = new List<Dictionary<string, obj>>()
+    while reader.Read() do
+        let row = new Dictionary<string, obj>()
+        for i in 0 .. reader.FieldCount - 1 do
+            row.[reader.GetName(i)] <- reader.GetValue(i)
+        results.Add(row)
+
+    results // Return the results
+
+let executeMysqlQueryAndReadResults connectionString query =
+    Result.map (executeMysqlQueryAndReadResultsBase connectionString) query
