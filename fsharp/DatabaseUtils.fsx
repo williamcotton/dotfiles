@@ -105,9 +105,25 @@ let readMysqlResultsBase (reader: MySqlDataReader) =
         results.Add(row)
     reader.Close()
     results
+    
 
 let readMysqlResults reader =
     Result.map readMysqlResultsBase reader
+
+let readMysqlResultsSeqBase (reader: MySqlDataReader) =
+    seq {
+        try
+            while reader.Read() do
+                let row = new Dictionary<string, obj>()
+                for i in 0 .. reader.FieldCount - 1 do
+                    row.[reader.GetName(i)] <- reader.GetValue(i)
+                yield row
+        finally
+            reader.Close()
+    }
+
+let readMysqlResultsSeq reader =
+    Result.map readMysqlResultsSeqBase reader
 
 let executeMysqlQueryAndReadResultsBase connectionString query =
     use connection = new MySqlConnection(connectionString)
