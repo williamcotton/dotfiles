@@ -760,6 +760,6 @@ except Exception as e:
     print(error_message, file=sys.stderr)
     sys.stdout.buffer.write(error_image_buffer.getvalue())
     sys.exit(1)
-
-# Delete the temporary file
-os.unlink(temp_file)
+finally:
+    # Delete the temporary file
+    os.unlink(temp_file)
