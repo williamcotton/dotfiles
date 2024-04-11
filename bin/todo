@@ -22,6 +22,7 @@ SELECTED_ROW = 3
 NOTE = 4
 BACKGROUND = 5
 
+
 def main(stdscr):
     # Initialize the curses library
     curses.initscr()
@@ -55,23 +56,33 @@ def main(stdscr):
 
         # Print the todo items and notes
         for i, item in enumerate(todo_items):
-            
-            if item.startswith("- [x]"):
-                is_completed = True
-            elif item.startswith("- [ ]"):
-                is_completed = False
+            is_todo = item.lstrip().startswith("- [")
 
-            if i == selected_item:
+            if is_todo:
+                is_completed = "- [x]" in item
+
+            if i == selected_item and is_todo:
                 # Highlight the selected item
-                stdscr.addstr(item, curses.color_pair(SELECTED_ROW) | curses.A_BOLD if item.startswith("- [x]") else curses.color_pair(SELECTED_ROW))
-            elif i > last_todo_item and not item.startswith("- ["):
+                attr = (
+                    curses.color_pair(SELECTED_ROW) | curses.A_BOLD
+                    if is_completed
+                    else curses.color_pair(SELECTED_ROW)
+                )
+                stdscr.addstr(item, attr)
+            elif i > last_todo_item and not is_todo:
                 # Color notes related to the previous todo item
-                stdscr.addstr(item, curses.color_pair(COMPLETED_ITEM) if is_completed else curses.color_pair(INCOMPLETE_ITEM))
+                attr = curses.color_pair(NOTE)
+                stdscr.addstr(item, attr)
             else:
-                stdscr.addstr(item, curses.color_pair(COMPLETED_ITEM) if item.startswith("- [x]") else curses.color_pair(INCOMPLETE_ITEM))
+                attr = (
+                    curses.color_pair(COMPLETED_ITEM)
+                    if is_completed
+                    else curses.color_pair(INCOMPLETE_ITEM)
+                )
+                stdscr.addstr(item, attr)
 
             # Update the last todo item index
-            if item.startswith("- ["):
+            if is_todo:
                 last_todo_item = i
 
         # Refresh the screen
@@ -87,12 +98,16 @@ def main(stdscr):
         elif key == curses.KEY_DOWN:
             # Move the selection down
             selected_item = min(selected_item + 1, len(todo_items) - 1)
-        elif key == ord("\n"):
+        elif key == ord("\n") and todo_items[selected_item].lstrip().startswith("- ["):
             # Toggle the selected item
-            if todo_items[selected_item].startswith("- [ ]"):
-                todo_items[selected_item] = todo_items[selected_item].replace("- [ ]", "- [x]", 1)
-            elif todo_items[selected_item].startswith("- [x]"):
-                todo_items[selected_item] = todo_items[selected_item].replace("- [x]", "- [ ]", 1)
+            if todo_items[selected_item].lstrip().startswith("- [ ]"):
+                todo_items[selected_item] = todo_items[selected_item].replace(
+                    "- [ ]", "- [x]", 1
+                )
+            elif todo_items[selected_item].lstrip().startswith("- [x]"):
+                todo_items[selected_item] = todo_items[selected_item].replace(
+                    "- [x]", "- [ ]", 1
+                )
         elif key == ord("q"):
             # Quit the program
             break
@@ -100,6 +115,7 @@ def main(stdscr):
     # Save the updated todo file
     with open(TODO_FILE, "w") as f:
         f.writelines(todo_items)
+
 
 # Run the main function
 curses.wrapper(main)
