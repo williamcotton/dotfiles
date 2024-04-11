@@ -145,3 +145,5 @@ let executeMysqlQueryAndReadResultsBase connectionString query =
 
 let executeMysqlQueryAndReadResults connectionString query =
     Result.map (executeMysqlQueryAndReadResultsBase connectionString) query
+
+let sql (s: string) = s

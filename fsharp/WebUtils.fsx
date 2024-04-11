@@ -50,3 +50,6 @@ let listen url app =
 
     printfn "Listening on %s" url
     Async.RunSynchronously(loop()) |> ignore
+
+let css (s: string) = s
+let html (s: string) = s
