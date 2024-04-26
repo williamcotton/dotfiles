@@ -8,6 +8,7 @@ open Npgsql
 open System.Collections.Generic
 open Newtonsoft.Json
 open MySql.Data.MySqlClient
+open System
 
 let convertToJsonBase results =
     (JsonConvert.SerializeObject(results, Formatting.Indented))
@@ -145,5 +146,93 @@ let executeMysqlQueryAndReadResultsBase connectionString query =
 
 let executeMysqlQueryAndReadResults connectionString query =
     Result.map (executeMysqlQueryAndReadResultsBase connectionString) query
+
+type QueryState = {
+    Columns: string list
+    Table: string
+    Joins: (string * string) list // (join type, table)
+    OnConditions: string list
+    Conditions: string list
+    GroupByColumns: string list
+    OrderByConditions: string list
+}
+
+type QueryBuilder() =
+    member __.Yield(_) = { Columns = []; Table = ""; Joins = []; OnConditions = []; Conditions = []; GroupByColumns = []; OrderByConditions = [] }
+
+    member __.Zero() = { Columns = []; Table = ""; Joins = []; OnConditions = []; Conditions = []; GroupByColumns = []; OrderByConditions = [] }
+
+    [<CustomOperation("select")>]
+    member __.Select(state: QueryState, columns) =
+        { state with Columns = columns }
+
+    [<CustomOperation("from")>]
+    member __.From(state: QueryState, table) =
+        { state with Table = table }
+
+    [<CustomOperation("where")>]
+    member __.Where(state: QueryState, newConditions) =
+        { state with Conditions = state.Conditions @ newConditions |> List.filter (fun x -> x <> "") }
+
+    [<CustomOperation("join")>]
+    member __.Join(state: QueryState, joinType, table, onCondition) =
+        { state with Joins = state.Joins @ [(joinType, table)]; OnConditions = state.OnConditions @ [onCondition] }
+
+    [<CustomOperation("group_by")>]
+    member __.GroupBy(state: QueryState, columns: string list) =
+        { state with GroupByColumns = columns }
+
+    [<CustomOperation("order_by")>]
+    member __.OrderBy(state: QueryState, conditions: string list) =
+        { state with OrderByConditions = conditions }
+    
+    member __.Bind(state: QueryState, f) =
+        f(state)
+
+    member __.Return(state: QueryState) =
+        state
+
+    member __.Run(state: QueryState) =
+        // failwith if required fields are missing
+        if state.Columns = [] then failwith "Columns are required"
+        if state.Table = "" then failwith "Table is required"
+
+        let selectClause =
+            let columns = String.Join(",\n  ", state.Columns)
+            sprintf "SELECT \n  %s \nFROM %s" columns state.Table
+
+        let joinClause query =
+            match state.Joins with
+            | [] -> query
+            | joins ->
+                let joinStrings = joins |> List.map (fun (joinType, table) -> sprintf "\n%s JOIN %s" joinType table)
+                let onStrings = state.OnConditions |> List.map (fun condition -> sprintf "\nON %s" condition)
+                sprintf "\n%s %s %s" query (String.Join(" ", joinStrings)) (String.Join(" ", onStrings))
+
+        let whereClause query =
+            match state.Conditions with
+            | [] -> query
+            | conditions -> sprintf "%s\nWHERE %s" query (String.Join("\nAND ", conditions))
+
+        let groupByClause query =
+            match state.GroupByColumns with
+            | [] -> query
+            | columns -> sprintf "%s\nGROUP BY %s" query (String.Join(", ", columns))
+
+        let orderByClause query =
+            match state.OrderByConditions with
+            | [] -> query
+            | conditions -> sprintf "%s\nORDER BY %s" query (String.Join(", ", conditions))
+
+        // Pipeline the query generation process
+        selectClause
+        |> joinClause
+        |> whereClause
+        |> groupByClause
+        |> orderByClause
+        |> fun query -> sprintf "%s;" query
+
+
+let queryBuilder = QueryBuilder()
 
 let sql (s: string) = s
