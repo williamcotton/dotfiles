@@ -13,6 +13,22 @@ function fawk() {
   gawk -i "$HOME/dotfiles/bin/fawk" "$@"
 }
 
+awkcsv() {
+    # Read the first line to get headers
+    read -r header
+    # Create the associative array mapping from header names to field numbers
+    awk_script="BEGIN {FS=\",\"; OFS=\",\"; split(\"$header\", header_names, FS)}
+    {
+        for (i = 1; i <= length(header_names); i++) {
+            fields[header_names[i]] = \$i
+        }
+    } 
+    $*"
+    
+    # Execute the awk script with the actual data, skipping the header
+    awk "$awk_script"
+}
+
 # Create a new directory and enter it
 function md() {
 	mkdir -p "$@" && cd "$@"
