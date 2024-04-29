@@ -166,6 +166,31 @@ type QueryBuilder() =
 
     member __.Zero() = { Columns = []; Table = ""; Joins = []; OnConditions = []; Conditions = []; GroupByColumns = []; HavingConditions = []; OrderByConditions = []; Limit = None; Offset = None }
 
+    member __.Bind(state: QueryState, f) =
+        f(state)
+
+    member __.Return(state: QueryState) =
+        state
+
+    member __.For(state: QueryState, f) =
+        __.Bind(state, f)
+
+    member __.Combine(state1: QueryState, state2: QueryState) =
+        {   
+            Columns = state1.Columns @ state2.Columns
+            Table = state1.Table
+            Joins = state1.Joins @ state2.Joins
+            OnConditions = state1.OnConditions @ state2.OnConditions
+            Conditions = state1.Conditions @ state2.Conditions
+            GroupByColumns = state1.GroupByColumns @ state2.GroupByColumns
+            OrderByConditions = state1.OrderByConditions @ state2.OrderByConditions
+            HavingConditions = state1.HavingConditions @ state2.HavingConditions
+            Limit = state2.Limit
+            Offset = state2.Offset 
+        }
+
+    member __.Delay(f) = f()
+
     [<CustomOperation("select")>]
     member __.Select(state: QueryState, columns) =
         { state with Columns = columns }
@@ -229,12 +254,6 @@ type QueryBuilder() =
     [<CustomOperation("conditional_offset")>]
     member __.ConditionalOffset(state: QueryState, condition: bool, offset) =
         if condition then __.Offset(state, offset) else state
-    
-    member __.Bind(state: QueryState, f) =
-        f(state)
-
-    member __.Return(state: QueryState) =
-        state
 
     member __.Run(state: QueryState) =
         // failwith if required fields are missing
@@ -293,7 +312,6 @@ type QueryBuilder() =
         |> limitClause
         |> offsetClause
         |> fun query -> sprintf "%s;" query
-
 
 let queryBuilder = QueryBuilder()
 
