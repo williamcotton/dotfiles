@@ -150,17 +150,21 @@ let executeMysqlQueryAndReadResults connectionString query =
 type QueryState = {
     Columns: string list
     Table: string
-    Joins: (string * string) list // (join type, table)
+    Joins: (string * string) list
     OnConditions: string list
     Conditions: string list
     GroupByColumns: string list
+    HavingConditions: string list
     OrderByConditions: string list
+    Limit: int option
+    Offset: int option
 }
 
-type QueryBuilder() =
-    member __.Yield(_) = { Columns = []; Table = ""; Joins = []; OnConditions = []; Conditions = []; GroupByColumns = []; OrderByConditions = [] }
 
-    member __.Zero() = { Columns = []; Table = ""; Joins = []; OnConditions = []; Conditions = []; GroupByColumns = []; OrderByConditions = [] }
+type QueryBuilder() =
+    member __.Yield(_) = { Columns = []; Table = ""; Joins = []; OnConditions = []; Conditions = []; GroupByColumns = []; HavingConditions = []; OrderByConditions = []; Limit = None; Offset = None }
+
+    member __.Zero() = { Columns = []; Table = ""; Joins = []; OnConditions = []; Conditions = []; GroupByColumns = []; HavingConditions = []; OrderByConditions = []; Limit = None; Offset = None }
 
     [<CustomOperation("select")>]
     member __.Select(state: QueryState, columns) =
@@ -171,20 +175,60 @@ type QueryBuilder() =
         { state with Table = table }
 
     [<CustomOperation("where")>]
-    member __.Where(state: QueryState, newConditions) =
-        { state with Conditions = state.Conditions @ newConditions |> List.filter (fun x -> x <> "") }
+    member __.Where(state: QueryState, newConditions, ?condition) =
+        if defaultArg condition true then { state with Conditions = state.Conditions @ newConditions |> List.filter (fun x -> x <> "") } else state
+
+    [<CustomOperation("conditional_where")>]
+    member __.ConditionalWhere(state: QueryState, condition: bool, newConditions) =
+        __.Where(state, newConditions, condition)
 
     [<CustomOperation("join")>]
     member __.Join(state: QueryState, joinType, table, onCondition) =
         { state with Joins = state.Joins @ [(joinType, table)]; OnConditions = state.OnConditions @ [onCondition] }
 
+    [<CustomOperation("conditional_join")>]
+    member __.ConditionalJoin(state: QueryState, condition: bool, joinType, table, onCondition) =
+        if condition then __.Join(state, joinType, table, onCondition) else state
+
     [<CustomOperation("group_by")>]
-    member __.GroupBy(state: QueryState, columns: string list) =
+    member __.GroupBy(state: QueryState, columns) =
         { state with GroupByColumns = columns }
 
+    [<CustomOperation("conditional_group_by")>]
+    member __.ConditionalGroupBy(state: QueryState, condition: bool, columns) =
+        if condition then __.GroupBy(state, columns) else state
+
+    [<CustomOperation("having")>]
+    member __.Having(state: QueryState, conditions) =
+        { state with HavingConditions = conditions }
+
+    [<CustomOperation("conditional_having")>]
+    member __.ConditionalHaving(state: QueryState, condition: bool, conditions) =
+        if condition then __.Having(state, conditions) else state
+
     [<CustomOperation("order_by")>]
-    member __.OrderBy(state: QueryState, conditions: string list) =
+    member __.OrderBy(state: QueryState, conditions) =
         { state with OrderByConditions = conditions }
+
+    [<CustomOperation("conditional_order_by")>]
+    member __.ConditionalOrderBy(state: QueryState, condition: bool, conditions) =
+        if condition then __.OrderBy(state, conditions) else state
+
+    [<CustomOperation("limit")>]
+    member __.Limit(state: QueryState, limit) =
+        { state with Limit = Some(limit) }
+
+    [<CustomOperation("conditional_limit")>]
+    member __.ConditionalLimit(state: QueryState, condition: bool, limit) =
+        if condition then __.Limit(state, limit) else state
+
+    [<CustomOperation("offset")>]
+    member __.Offset(state: QueryState, offset) =
+        { state with Offset = Some(offset) }
+
+    [<CustomOperation("conditional_offset")>]
+    member __.ConditionalOffset(state: QueryState, condition: bool, offset) =
+        if condition then __.Offset(state, offset) else state
     
     member __.Bind(state: QueryState, f) =
         f(state)
@@ -219,17 +263,35 @@ type QueryBuilder() =
             | [] -> query
             | columns -> sprintf "%s\nGROUP BY %s" query (String.Join(", ", columns))
 
+        let havingClause query =
+            match state.HavingConditions with
+            | [] -> query
+            | conditions -> sprintf "%s\nHAVING %s" query (String.Join("\nAND ", conditions))
+
         let orderByClause query =
             match state.OrderByConditions with
             | [] -> query
             | conditions -> sprintf "%s\nORDER BY %s" query (String.Join(", ", conditions))
+
+        let limitClause query =
+            match state.Limit with
+            | None -> query
+            | Some limit -> sprintf "%s\nLIMIT %d" query limit
+        
+        let offsetClause query =
+            match state.Offset with
+            | None -> query
+            | Some offset -> sprintf "%s\nOFFSET %d" query offset
 
         // Pipeline the query generation process
         selectClause
         |> joinClause
         |> whereClause
         |> groupByClause
+        |> havingClause
         |> orderByClause
+        |> limitClause
+        |> offsetClause
         |> fun query -> sprintf "%s;" query
 
 
