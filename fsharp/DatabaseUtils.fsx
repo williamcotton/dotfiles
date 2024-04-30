@@ -149,7 +149,7 @@ let executeMysqlQueryAndReadResults connectionString query =
 
 type QueryState = {
     Columns: string list
-    Table: string
+    Table: string option
     Joins: (string * string) list
     OnConditions: string list
     Conditions: string list
@@ -161,10 +161,10 @@ type QueryState = {
 }
 
 
-type QueryBuilder() =
-    member __.Yield(_) = { Columns = []; Table = ""; Joins = []; OnConditions = []; Conditions = []; GroupByColumns = []; HavingConditions = []; OrderByConditions = []; Limit = None; Offset = None }
+type SqlQueryBuilder() =
+    member __.Yield(_) = { Columns = []; Table = None; Joins = []; OnConditions = []; Conditions = []; GroupByColumns = []; HavingConditions = []; OrderByConditions = []; Limit = None; Offset = None }
 
-    member __.Zero() = { Columns = []; Table = ""; Joins = []; OnConditions = []; Conditions = []; GroupByColumns = []; HavingConditions = []; OrderByConditions = []; Limit = None; Offset = None }
+    member __.Zero() = { Columns = []; Table = None; Joins = []; OnConditions = []; Conditions = []; GroupByColumns = []; HavingConditions = []; OrderByConditions = []; Limit = None; Offset = None }
 
     member __.Bind(state: QueryState, f) =
         f(state)
@@ -197,7 +197,7 @@ type QueryBuilder() =
 
     [<CustomOperation("from")>]
     member __.From(state: QueryState, table) =
-        { state with Table = table }
+        { state with Table = Some(table) }
 
     [<CustomOperation("where")>]
     member __.Where(state: QueryState, newConditions, ?condition) =
@@ -258,11 +258,12 @@ type QueryBuilder() =
     member __.Run(state: QueryState) =
         // failwith if required fields are missing
         if state.Columns = [] then failwith "Columns are required"
-        if state.Table = "" then failwith "Table is required"
+        if state.Table = None then failwith "Table is required"
 
         let selectClause =
             let columns = String.Join(",\n  ", state.Columns)
-            sprintf "SELECT \n  %s \nFROM %s" columns state.Table
+            let table = Option.defaultValue "" state.Table
+            sprintf "SELECT \n  %s \nFROM %s" columns table
 
         let joinClause query =
             match state.Joins with
@@ -313,6 +314,6 @@ type QueryBuilder() =
         |> offsetClause
         |> fun query -> sprintf "%s;" query
 
-let queryBuilder = QueryBuilder()
+let sqlBuilder = SqlQueryBuilder()
 
 let sql (s: string) = s
