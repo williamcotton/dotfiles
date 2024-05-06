@@ -1,0 +1,47 @@
+#!/usr/bin/env python
+
+import argparse
+import pdfplumber
+import csv
+import sys
+
+def extract_data_from_pdf_to_csv(pdf_path, output_csv_path=None, page_number=None, newline_replacement=""):
+    with pdfplumber.open(pdf_path) as pdf:
+        pages = [pdf.pages[page_number - 1]] if page_number else pdf.pages  # Use specified page or all pages
+
+        if output_csv_path:
+            csvfile = open(output_csv_path, 'w', newline='')
+        else:
+            csvfile = sys.stdout
+
+        csv_writer = csv.writer(csvfile)
+
+        for page in pages:
+            table = page.extract_table()
+
+            if table is None:
+                continue  # Skip pages without a table
+
+            for row in table:
+                # Clean each cell, replace None with empty string, and replace newline characters
+                cleaned_row = [str(cell or "").replace("\n", newline_replacement) for cell in row]
+                csv_writer.writerow(cleaned_row)
+
+        if output_csv_path:
+            csvfile.close()
+
+def main():
+    parser = argparse.ArgumentParser(description="Convert tables from a PDF document to a CSV file or print to STDOUT, with newline replacement in cells.")
+    parser.add_argument("pdf_path", type=str, help="The path to the PDF file.")
+    parser.add_argument("--output", type=str, help="The path where the CSV file will be saved (optional).")
+    parser.add_argument("--page", type=int, help="Page number to extract from (optional).")
+    parser.add_argument("--new-line", type=str, default="\n", help="Replacement string for new lines within cells.")
+
+    args = parser.parse_args()
+
+    extract_data_from_pdf_to_csv(args.pdf_path, args.output, args.page, args.new_line)
+    if args.output:
+        print(f"CSV file has been created at {args.output}")
+
+if __name__ == "__main__":
+    main()
