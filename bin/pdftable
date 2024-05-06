@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+
+import argparse
+import pdfplumber
+
+def extract_data_from_pdf(pdf_path, page_number=None, row=None, column=None, newline_replacement=""):
+    with pdfplumber.open(pdf_path) as pdf:
+        pages = [pdf.pages[page_number - 1]] if page_number else pdf.pages  # If page_number is None, use all pages
+
+        results = []
+        for page in pages:
+            table = page.extract_table()
+
+            if table is None:
+                continue  # Skip pages without a table
+
+            if row is not None and column is not None:
+                # Specific cell extraction from a specified row and column
+                cell = table[row - 1][column - 1] or ""
+                results.append(str(cell).replace("\n", newline_replacement))
+            elif row is not None:
+                # Entire row extraction
+                results.append(newline_replacement.join(str(cell or "").replace("\n", newline_replacement) for cell in table[row - 1]))
+            elif column is not None:
+                # Entire column extraction
+                results.extend(str(table[r][column - 1] or "").replace("\n", newline_replacement) for r in range(len(table)))
+            else:
+                # Full table extraction as formatted output
+                for r in table:
+                    results.append(newline_replacement.join(str(cell or "").replace("\n", newline_replacement) for cell in r))
+
+        return "\n".join(results)
+
+def main():
+    parser = argparse.ArgumentParser(description="Extract data from tables in PDF documents.")
+    parser.add_argument("pdf_path", type=str, help="The path to the PDF file.")
+    parser.add_argument("--page", type=int, help="Page number to extract from (optional).")
+    parser.add_argument("--row", type=int, help="Row number to extract from (optional).")
+    parser.add_argument("--column", type=int, help="Column number to extract from (optional).")
+    parser.add_argument("--new-line", type=str, default="", help="Replacement string for new lines within cells.")
+
+    args = parser.parse_args()
+
+    result = extract_data_from_pdf(args.pdf_path, args.page, args.row, args.column, args.new_line)
+    print(result if result else "No tables found on the specified page(s).")
+
+if __name__ == "__main__":
+    main()
