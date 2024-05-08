@@ -1,0 +1,29 @@
+#!/usr/bin/env node
+
+const puppeteer = require('puppeteer');
+
+(async () => {
+  // Get the URL from the command-line argument
+  const url = process.argv[2];
+
+  // Launch a headless browser
+  const browser = await puppeteer.launch({ headless: "new"});
+
+  // Open a new page
+  const page = await browser.newPage();
+
+  // Navigate to the web page
+  await page.goto(url);
+
+  // Wait for the page to fully load and build the DOM
+  // await page.waitForNavigation({ waitUntil: 'networkidle0' });
+
+  // Get the full DOM as HTML
+  const html = await page.content();
+
+  // Export the full DOM as HTML to stdout
+  process.stdout.write(html);
+
+  // Close the browser
+  await browser.close();
+})();
