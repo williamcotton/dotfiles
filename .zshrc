@@ -107,5 +107,3 @@ DIRECTORY=`dirname $ZSHRC_FILE`
 
 # ASDF configuration
 [ -s "$HOME/.asdf/asdf.sh" ] && . $HOME/.asdf/asdf.sh
-
-source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
