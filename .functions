@@ -107,6 +107,10 @@ function json() {
 	fi
 }
 
+function jsonstruct() {
+  jq '. | with_entries(if .value | type == "object" then .value = "{...}" elif .value | type == "array" then .value = "[...]" else . end)'
+}
+
 # All the dig info
 function digga() {
 	dig +nocmd "$1" any +multiline +noall +answer
