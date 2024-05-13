@@ -75,3 +75,6 @@ let awk = commandFunc "gawk"
 
 let plt64 pltProgram =
     zsh $"plt '{pltProgram}' | tee >(imgc > /dev/null) | base64"
+
+let ggplot64 ggplotProgram =
+    zsh $"ggplot '{ggplotProgram}' | tee >(imgc > /dev/null) | base64"
