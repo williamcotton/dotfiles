@@ -372,6 +372,10 @@ function tsvtocsv() {
   }'
 }
 
+function ggplot() {
+  rush run --library tidyverse "$@" -
+}
+
 # Define the adeline function
 adeline() {
   # Get a random image file from the ~/Pictures/ada directory
