@@ -377,7 +377,12 @@ function tsvtocsv() {
 }
 
 function ggplot() {
-  rush run --library tidyverse "$@" -
+  if [[ "$1" == "-f" ]]; then
+    shift
+    rush run --library tidyverse "$(cat "$1")" -
+  else
+    rush run --library tidyverse "$@" -
+  fi
 }
 
 # Define the adeline function
