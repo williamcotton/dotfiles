@@ -11,7 +11,7 @@ type CommandResult =
     StandardError: string }
 
 let base64ToHtmlImg (base64Img) =
-    $"<img src=\"data:image/png;base64,{base64Img}\" />"
+    $"<img src=\"data:image/png;base64,{base64Img}\" style=\"width: 500px\"/>"
 
 let executeCommand executable args =
   async {
