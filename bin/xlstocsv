@@ -2,21 +2,31 @@
 
 import sys
 import csv
-import xlrd
 from io import BytesIO
+import argparse
+from openpyxl import load_workbook
+
+# Set up argument parser
+parser = argparse.ArgumentParser(description='Convert an Excel sheet to CSV.')
+parser.add_argument('-s', '--sheet', type=int, default=0, help='Sheet index to select (default is 0)')
+
+# Parse arguments
+args = parser.parse_args()
 
 # Read Excel file from standard input
 buffer = BytesIO(sys.stdin.buffer.read())
 
 # Open the workbook
-wb = xlrd.open_workbook(file_contents=buffer.getvalue())
+wb = load_workbook(filename=BytesIO(buffer.getvalue()), data_only=True)
 
-# Select the first sheet
-ws = wb.sheet_by_index(0)
+# Get the sheet names
+sheet_names = wb.sheetnames
 
-# Write values to standard output as tab-separated values
+# Select the specified sheet by index
+ws = wb[sheet_names[args.sheet]]
+
+# Write values to standard output as CSV
 writer = csv.writer(sys.stdout)
 
-for row_idx in range(ws.nrows):
-    row = ws.row_values(row_idx)
+for row in ws.iter_rows(values_only=True):
     writer.writerow(row)
