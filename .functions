@@ -385,6 +385,12 @@ function ggplot() {
   fi
 }
 
+function pg() {                                                                                 
+  local query
+  query=$(cat)
+  psql -X -A -F $'\t' --no-align --pset footer=off "$@" -c "$query"
+}
+
 # Define the adeline function
 adeline() {
   # Get a random image file from the ~/Pictures/ada directory
