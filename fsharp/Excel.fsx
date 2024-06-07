@@ -1,30 +1,41 @@
 module Excel
 
-#r "nuget: ExcelDataReader"
-#r "nuget: ExcelDataReader.DataSet"
-#r "nuget: FsExcel"
-#r "nuget: CsvHelper"
+#r "nuget: ClosedXML"
 
-open System.IO
-open ExcelDataReader
-open System.Text
-open CsvHelper
-open FsExcel
-open System.Globalization
+open ClosedXML.Excel
 
-let excelToCsv (excelFilePath: string) =
-    use stream = File.Open(excelFilePath, FileMode.Open, FileAccess.Read)
-    use reader = ExcelReaderFactory.CreateReader(stream)
+let tryLoadWorkbook (filePath: string) =
+    try
+        let workbook = new XLWorkbook(filePath)
+        Ok workbook
+    with
+    | ex -> Error ex.Message
 
-    let dataSet = reader.AsDataSet()
-    let table = dataSet.Tables.[0]
+let tryGetWorksheet (workbook: XLWorkbook) (sheetName: string)  =
+    try
+        let worksheet = workbook.Worksheet(sheetName)
+        if isNull worksheet then None else Some worksheet
+    with
+    | _ -> None
 
-    let csvStringBuilder = StringBuilder()
-    use csvWriter = new CsvWriter(new StringWriter(csvStringBuilder), CultureInfo.InvariantCulture)
+let tryGetColumnLetter (worksheet: IXLWorksheet) columnName =
+    let headers = worksheet.Row(1).CellsUsed() // Assuming the headers are in the first row
+    headers 
+    |> Seq.tryFind (fun cell -> cell.GetString() = columnName) 
+    |> Option.map (fun cell -> cell.Address.ColumnLetter)
 
-    for row in table.Rows do
-        for i in 0 .. table.Columns.Count - 1 do
-            csvWriter.WriteField(row.[i].ToString()) |> ignore
-        csvWriter.NextRecord() |> ignore
+let getColumnLetter (worksheet: IXLWorksheet) columnName =
+    tryGetColumnLetter worksheet columnName
+    |> function
+    | Some colLetter -> colLetter
+    | None -> failwithf "Column %s not found" columnName
 
-    Ok (csvStringBuilder.ToString())
+let rowCellValue (row : IXLRow) (columnName : string) =
+    let columnLetter = getColumnLetter row.Worksheet columnName
+    let cell = row.Cell(columnLetter)
+    if cell.HasFormula then
+        // Attempt to get the calculated value of the formula
+        try cell.CachedValue.ToString()
+        with | _ -> ""
+    else
+        cell.GetValue<string>()
