@@ -2,8 +2,8 @@ set_project_name() {
   local dir=$(pwd)
   while [ "$dir" != "/" ]; do
     if [[ "$dir" =~ ^(.*/)?Projects/([^/]+)/?$ ]]; then
-      export PRJ_NAME="${match[2]}"
-      export PRJ_DIR="$HOME/Projects/${match[2]}"
+      prj_name="${match[2]}"
+      prj_dir="$HOME/Projects/${match[2]}"
       return
     fi
     dir=$(dirname "$dir")
@@ -11,16 +11,16 @@ set_project_name() {
 }
 set_project_name
 
-if [ -f "$PRJ_DIR/.project" ]; then
-  source "$PRJ_DIR/.project"
+if [ -f "$prj_dir/.project" ]; then
+  source "$prj_dir/.project"
 fi
 
-export PATH="$PRJ_DIR/bin:$PATH"
-export PYTHONPATH="$PRJ_DIR/lib:$PYTHONPATH"
+PATH="$prj_dir/bin:$PATH"
+PYTHONPATH="$prj_dir/lib:$PYTHONPATH"
 
-get_project_name() { echo "$PRJ_NAME" }
+get_project_name() { echo "$prj_name" }
 
-alias pcd='cd "$PRJ_DIR"'
+alias pcd='cd "$prj_dir"'
 
 get_project_database_name() {
   local project_name=$(get_project_name)
@@ -88,27 +88,7 @@ pgsl() {
 }
 
 prj() {
-  local dir=$(pwd)
-  while [ "$dir" != "/" ]; do
-    if [[ "$dir" =~ ^(.*/)?Projects/([^/]+)/?$ ]]; then
-      local project_name=${match[2]}
-      echo "[$project_name]\n" >&2
-      cd "$dir"
-			echo "$project_name" >> "$HOME/.prj_history"
-      export PRJ_HISTORY="$project_name"
-      echo "$(mdless --no-pager todo.md)" >&2
-      return
-    fi
-    dir=$(dirname "$dir")
-  done
-  local last_project=${PRJ_HISTORY:-$(tail -n 1 "$HOME/.prj_history" 2>/dev/null)}
-  if [ -n "$last_project" ]; then
-    echo "[last project]" >&2
-    echo "[$last_project]\n" >&2
-    cd "$HOME/Projects/$last_project"
-    export PRJ_HISTORY="$last_project"
-    echo "$(mdless --no-pager todo.md)" >&2
-  else
-    echo "Error: Could not find project root directory and no project found in history" >&2
-  fi
+  echo "[$prj_name]\n" >&2
+  cd "$prj_dir"
+  echo "$(mdless --no-pager todo.md)" >&2
 }
