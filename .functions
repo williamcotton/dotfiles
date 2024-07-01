@@ -385,11 +385,38 @@ function ggplot() {
   fi
 }
 
-function pg() {                                                                                 
-  local query
-  query=$(cat)
-  psql -X -A -F $'\t' --no-align --pset footer=off "$@" -c "$query"
+function pg() {
+  local query=""
+  local args=()
+  local input_from_stdin=1  # Assume input is from stdin initially.
+
+  # Process arguments
+  while (( "$#" )); do
+    if [[ "$1" == "-c" ]]; then
+      if [[ -n "$2" ]]; then
+        query="$2"         # Set the query from the next argument
+        shift 2            # Skip the next argument as it's the query
+        input_from_stdin=0 # No input from stdin since query is specified
+        break
+      else
+        echo "Error: Expected a query after -c flag"
+        return 1
+      fi
+    else
+      args+=("$1")        # Collect other arguments
+      shift
+    fi
+  done
+
+  # Read query from stdin if not provided via -c
+  if [[ "$input_from_stdin" -eq 1 ]]; then
+    query=$(cat)
+  fi
+
+  # Execute the query with collected arguments
+  psql -X -A -F $'\t' --no-align --pset footer=off "${args[@]}" -c "$query"
 }
+
 
 # Define the adeline function
 adeline() {
