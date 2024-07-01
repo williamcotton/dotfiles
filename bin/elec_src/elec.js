@@ -44,6 +44,7 @@ const createWindow = () => {
     webPreferences: {
       nodeIntegration: true,
       enableRemoteModule: true,
+      contextIsolation: true,
       sandbox: false,
       preload: path.join(__dirname, "preload.js"),
     },

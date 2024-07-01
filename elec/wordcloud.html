@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Wordcloud Generator</title>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3-cloud@1.2.5/build/d3.layout.cloud.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+
+    #wordcloud {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="wordcloud"></div>
+  <script>
+    STDIN((input) => {
+      const words = input.trim().split('\n').map(line => {
+        const [word, count] = line.split(',');
+        return { text: word, size: Math.sqrt(parseInt(count)) * 5 };
+      });
+
+      const width = 800;
+      const height = 400;
+
+      const layout = d3.layout.cloud()
+        .size([width, height])
+        .words(words)
+        .padding(5)
+        .rotate(() => ~~(Math.random() * 2) * 90)
+        .font("Impact")
+        .fontSize(d => d.size)
+        .on("end", draw);
+
+      layout.start();
+
+      function draw(words) {
+        d3.select("#wordcloud").append("svg")
+          .attr("width", width)
+          .attr("height", height)
+          .append("g")
+          .attr("transform", `translate(${width / 2},${height / 2})`)
+          .selectAll("text")
+          .data(words)
+          .enter().append("text")
+          .style("font-size", d => `${d.size}px`)
+          .style("font-family", "Impact")
+          .style("fill", () => d3.schemeCategory10[Math.floor(Math.random() * 10)])
+          .attr("text-anchor", "middle")
+          .attr("transform", d => `translate(${d.x},${d.y})rotate(${d.rotate})`)
+          .text(d => d.text);
+
+        resizeWindow(800, 450);
+        focusWindow();
+      }
+    });
+  </script>
+</body>
+
+</html>

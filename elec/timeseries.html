@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Time Series Line Chart</title>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    .line { fill: none; stroke: steelblue; stroke-width: 2; }
+  </style>
+</head>
+<body>
+  <div id="line-chart"></div>
+  <script>
+    STDIN((input) => {
+      const rows = input.trim().split('\n').map(row => row.split(','));
+      const headers = rows.shift();
+      const data = rows.map(row => ({
+        date: new Date(row[0]),
+        value: parseFloat(row[1])
+      }));
+      
+      const margin = {top: 20, right: 30, bottom: 30, left: 50};
+      const width = 800 - margin.left - margin.right;
+      const height = 400 - margin.top - margin.bottom;
+      
+      const svg = d3.select("#line-chart")
+        .append("svg")
+          .attr("width", width + margin.left + margin.right)
+          .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+          .attr("transform", `translate(${margin.left},${margin.top})`);
+      
+      const x = d3.scaleTime()
+        .domain(d3.extent(data, d => d.date))
+        .range([0, width]);
+      
+      const y = d3.scaleLinear()
+        .domain([0, d3.max(data, d => d.value)])
+        .range([height, 0]);
+      
+      const line = d3.line()
+        .x(d => x(d.date))
+        .y(d => y(d.value));
+      
+      svg.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x));
+      
+      svg.append("g")
+        .call(d3.axisLeft(y));
+      
+      svg.append("path")
+        .datum(data)
+        .attr("class", "line")
+        .attr("d", line);
+      
+      resizeWindow(800, 450);
+      focusWindow();
+    });
+  </script>
+</body>
+</html>

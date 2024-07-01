@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Scatter Plot Matrix</title>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    .cell { stroke: #ccc; }
+  </style>
+</head>
+<body>
+  <div id="scatter-matrix"></div>
+  <script>
+    STDIN((input) => {
+      const rows = input.trim().split('\n').map(row => row.split(','));
+      const headers = rows.shift();
+      const data = rows.map(row => {
+        const obj = {};
+        headers.forEach((header, i) => {
+          obj[header] = parseFloat(row[i]);
+        });
+        return obj;
+      });
+      
+      const size = 150;
+      const padding = 20;
+      
+      const svg = d3.select("#scatter-matrix")
+        .append("svg")
+        .attr("width", size * headers.length + padding)
+        .attr("height", size * headers.length + padding);
+      
+      const scales = {};
+      headers.forEach(header => {
+        scales[header] = d3.scaleLinear()
+          .domain(d3.extent(data, d => d[header]))
+          .range([padding / 2, size - padding / 2]);
+      });
+      
+      headers.forEach((header1, i) => {
+        headers.forEach((header2, j) => {
+          const cell = svg.append("g")
+            .attr("transform", `translate(${i * size},${j * size})`);
+          
+          cell.append("rect")
+            .attr("class", "cell")
+            .attr("width", size)
+            .attr("height", size)
+            .attr("fill", "none");
+          
+          if (i !== j) {
+            cell.selectAll("circle")
+              .data(data)
+              .enter().append("circle")
+              .attr("cx", d => scales[header1](d[header1]))
+              .attr("cy", d => scales[header2](d[header2]))
+              .attr("r", 3)
+              .attr("fill", "#69b3a2");
+          } else {
+            cell.append("text")
+              .attr("x", size / 2)
+              .attr("y", size / 2)
+              .attr("text-anchor", "middle")
+              .attr("alignment-baseline", "middle")
+              .text(header1);
+          }
+        });
+      });
+      
+      resizeWindow(size * headers.length + padding, size * headers.length + padding);
+      focusWindow();
+    });
+  </script>
+</body>
+</html>

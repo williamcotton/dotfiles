@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>HTML</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f0f0f0;
+    }
+
+    #image-container {
+      max-width: 100%;
+      max-height: 100%;
+    }
+
+    img {
+      max-width: 100%;
+      max-height: 100vh;
+      object-fit: contain;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background-color: #222;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="container"></div>
+  <script>
+    function displayImage(htmlContent) {
+      const container = document.getElementById('container');
+      container.innerHTML = htmlContent;
+      resizeWindow(800, 600);
+      focusWindow();
+    }
+
+    STDIN((input) => {
+      const htmlContent = input.trim();
+      displayImage(htmlContent);
+    });
+  </script>
+</body>
+
+</html>

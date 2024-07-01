@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Histogram Generator</title>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    #histogram { max-width: 800px; margin: 0 auto; }
+  </style>
+</head>
+<body>
+  <div id="histogram"></div>
+  <script>
+    STDIN((input) => {
+      const data = input.trim().split('\n').map(Number);
+      
+      const margin = {top: 20, right: 30, bottom: 30, left: 40};
+      const width = 800 - margin.left - margin.right;
+      const height = 400 - margin.top - margin.bottom;
+      
+      const svg = d3.select("#histogram")
+        .append("svg")
+          .attr("width", width + margin.left + margin.right)
+          .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+          .attr("transform", `translate(${margin.left},${margin.top})`);
+      
+      const x = d3.scaleLinear()
+        .domain([d3.min(data), d3.max(data)])
+        .range([0, width]);
+      
+      const histogram = d3.histogram()
+        .domain(x.domain())
+        .thresholds(x.ticks(20));
+      
+      const bins = histogram(data);
+      
+      const y = d3.scaleLinear()
+        .domain([0, d3.max(bins, d => d.length)])
+        .range([height, 0]);
+      
+      svg.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x));
+      
+      svg.append("g")
+        .call(d3.axisLeft(y));
+      
+      svg.selectAll("rect")
+        .data(bins)
+        .join("rect")
+          .attr("x", d => x(d.x0) + 1)
+          .attr("width", d => Math.max(0, x(d.x1) - x(d.x0) - 1))
+          .attr("y", d => y(d.length))
+          .attr("height", d => y(0) - y(d.length))
+          .style("fill", "#69b3a2");
+      
+      resizeWindow(800, 450);
+      focusWindow();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Sankey Diagram</title>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+    }
+
+    .node rect {
+      fill-opacity: 0.9;
+      shape-rendering: crispEdges;
+    }
+
+    .node text {
+      pointer-events: none;
+      fill: white;
+    }
+
+    .link {
+      fill: none;
+      stroke-opacity: 0.2;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="sankey"></div>
+  <script>
+    STDIN((input) => {
+      const rows = input.trim().split('\n').map(row => row.split(','));
+      const headers = rows.shift();
+
+      const nodeMap = new Map();
+      rows.forEach(row => {
+        if (!nodeMap.has(row[0])) nodeMap.set(row[0], nodeMap.size);
+        if (!nodeMap.has(row[1])) nodeMap.set(row[1], nodeMap.size);
+      });
+
+      const data = {
+        nodes: Array.from(nodeMap.keys()).map(name => ({ name })),
+        links: rows.map(row => ({
+          source: nodeMap.get(row[0]),
+          target: nodeMap.get(row[1]),
+          value: parseFloat(row[2])
+        }))
+      };
+
+      const width = 800;
+      const height = 600;
+
+      const svg = d3.select("#sankey").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+      const sankey = d3.sankey()
+        .nodeWidth(15)
+        .nodePadding(10)
+        .extent([[1, 1], [width - 1, height - 6]]);
+
+      const { nodes, links } = sankey(data);
+
+      svg.append("g")
+        .selectAll("rect")
+        .data(nodes)
+        .join("rect")
+        .attr("x", d => d.x0)
+        .attr("y", d => d.y0)
+        .attr("height", d => d.y1 - d.y0)
+        .attr("width", d => d.x1 - d.x0)
+        .attr("fill", d => d3.schemeCategory10[d.index % 10])
+        .append("title")
+        .text(d => `${d.name}\n${d.value.toLocaleString()}`);
+
+      svg.append("g")
+        .attr("fill", "none")
+        .selectAll("g")
+        .data(links)
+        .join("path")
+        .attr("d", d3.sankeyLinkHorizontal())
+        .attr("stroke", d => d3.color(d3.schemeCategory10[d.source.index % 10]).darker(0.5))
+        .attr("stroke-width", d => Math.max(1, d.width));
+
+      svg.append("g")
+        .style("font", "10px sans-serif")
+        .style("font-weight", "bold")
+        .selectAll("text")
+        .data(nodes)
+        .join("text")
+        .attr("x", d => d.x0 < width / 2 ? d.x1 + 6 : d.x0 - 6)
+        .attr("y", d => (d.y1 + d.y0) / 2)
+        .attr("dy", "0.35em")
+        .attr("text-anchor", d => d.x0 < width / 2 ? "start" : "end")
+        .text(d => d.name);
+
+      resizeWindow(800, 650);
+      focusWindow();
+    });
+  </script>
+</body>
+
+</html>
