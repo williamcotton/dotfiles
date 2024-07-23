@@ -218,6 +218,10 @@ imgc() {
   tee >(imgcat "$@") >(impbcopy -) > /dev/null
 }
 
+pngcopyhtml() {
+  tee >(pngtohtml) >(impbcopy -) > /dev/null
+}
+
 tc() {
   touch "$@"
   code "$@"
@@ -299,13 +303,27 @@ htmltopdf() {
 prependcss() {
   local html="$(cat -)"
   local css=""
-  for arg in "$@"; do
-    if [[ -f "$arg" ]]; then
-      css="$css$(cat "$arg")"
-    else
-      css="$css$arg"
-    fi
+  local inline_css=""
+
+  while [[ "$#" -gt 0 ]]; do
+    case "$1" in
+      -c) # Handle inline CSS
+        shift # Move past the '-c' to the actual CSS content
+        inline_css+="$1"
+        shift # Move past the CSS content
+        ;;
+      *) # Handle CSS files
+        if [[ -f "$1" ]]; then
+          css+=$(cat "$1")
+        fi
+        shift # Move to the next argument
+        ;;
+    esac
   done
+
+  # Combine file CSS and inline CSS
+  css="$css$inline_css"
+
   echo "<style>$css</style>$html"
 }
 
@@ -417,6 +435,20 @@ function pg() {
   psql -X -A -F $'\t' --no-align --pset footer=off "${args[@]}" -c "$query"
 }
 
+function fsharp() {
+  # Create a temporary file with a .fsx extension
+  local tmpfile=$(mktemp /tmp/temp_fsharp_script.XXXXXX.fsx)
+
+  # Write all arguments to this temp file
+  echo "$@" > $tmpfile
+
+  # Execute the F# script using dotnet fsi
+  # Redirecting stderr to /dev/null to suppress F# Interactive headers
+  dotnet fsi $tmpfile 2> /dev/null
+
+  # Remove the temporary file after execution
+  rm $tmpfile
+}
 
 # Define the adeline function
 adeline() {
