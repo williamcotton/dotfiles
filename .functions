@@ -454,6 +454,20 @@ function fsharp() {
   rm $tmpfile
 }
 
+offset() {
+  local start_line=$1
+  local num_lines=$2
+
+  # Ensure start_line and num_lines are positive integers
+  if ! [[ "$start_line" =~ ^[0-9]+$ ]] || ! [[ "$num_lines" =~ ^[0-9]+$ ]]; then
+      echo "Start line and number of lines must be positive integers."
+      return 1
+  fi
+
+  # Use tail and head to display the lines
+  tail -n +$start_line | head -n $num_lines
+}
+
 # Define the adeline function
 adeline() {
   # Get a random image file from the ~/Pictures/ada directory
