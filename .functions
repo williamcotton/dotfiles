@@ -379,6 +379,10 @@ function csvtotsv() {
   csvformat -T -
 }
 
+function tablecho() {
+  echo "$@"
+}
+
 function tsvtocsv() {
   awk 'BEGIN { FS="\t"; OFS="," } {
     rebuilt=0
