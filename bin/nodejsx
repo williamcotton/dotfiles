@@ -1,0 +1,58 @@
+#!/usr/bin/env node
+
+const { execSync } = require("child_process");
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
+const vm = require("vm");
+
+const jsxCode = process.argv[2];
+
+// Read from stdin
+const stdin = fs.readFileSync(0, "utf8");
+
+// Create a temporary file with .jsx extension
+const tmpDir = os.tmpdir();
+const tmpFile = path.join(tmpDir, `nodejsx-${Date.now()}.jsx`);
+
+try {
+  // Prepend necessary imports and STDIN assignment to the JSX code
+  const fullCode = `
+    import React from 'react';
+    import ReactDOMServer from 'react-dom/server';
+    const STDIN = ${JSON.stringify(stdin)};
+    ${jsxCode}
+    if (typeof App !== 'undefined') {
+      console.log(ReactDOMServer.renderToString(<App />));
+    }
+  `;
+
+  // Write the full code to the temporary file
+  fs.writeFileSync(tmpFile, fullCode);
+
+  // Use esbuild CLI to transpile JSX to JavaScript
+  const transpiledCode = execSync(
+    `esbuild ${tmpFile} --format=cjs --target=node14 --bundle --external:react --external:react-dom/server`,
+    {
+      encoding: "utf8",
+    }
+  );
+
+  // Create a context with required modules
+  const context = vm.createContext({
+    require,
+    process,
+    console,
+    Buffer,
+    setTimeout,
+    clearTimeout,
+    setInterval,
+    clearInterval,
+  });
+
+  // Execute the transpiled code
+  vm.runInContext(transpiledCode, context);
+} finally {
+  // Clean up: remove the temporary file
+  fs.unlinkSync(tmpFile);
+}
