@@ -23,6 +23,7 @@ alias yt="yarn test -u --coverage=false"
 alias jit="node inspect node_modules/.bin/jest"
 alias lss="find . -not -path '*/\.*'"
 alias fsi="dotnet fsi --langversion:preview"
+alias ansi2htmllight="ansi2html -l -s solarized | sed 's/.body_background { background-color: #AAAAAA; }/.body_background { background-color: #FFFFFF; }/'"
 
 # List all files colorized in long format
 alias l="ls -Gl"
