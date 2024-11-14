@@ -398,6 +398,10 @@ function tsvtocsv() {
   }'
 }
 
+function npmversion() {
+  curl -s "https://registry.npmjs.org/$1" | jq -r '.time | .["'$2'"]' | gdate --file=- +"%m/%d/%Y"
+}
+
 function ggplot() {
   if [[ "$1" == "-f" ]]; then
     shift
