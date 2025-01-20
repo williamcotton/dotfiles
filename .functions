@@ -40,12 +40,12 @@ function dockerbash() {
 }
 
 # Use Git’s colored diff when available
-hash git &>/dev/null
-if [ $? -eq 0 ]; then
-	function diff() {
-		git diff --no-index --color-words "$@"
-	}
-fi
+# hash git &>/dev/null
+# if [ $? -eq 0 ]; then
+# 	function diff() {
+# 		git diff --no-index --color-words "$@"
+# 	}
+# fi
 
 # Create a data URL from an image (works for other file types too, if you tweak the Content-Type afterwards)
 dataurl() {
@@ -224,7 +224,7 @@ pngcopyhtml() {
 
 tc() {
   touch "$@"
-  code "$@"
+  cursor "$@"
 }
 
 tce() {
